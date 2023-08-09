@@ -54,6 +54,15 @@ MainApp::MainApp() {
 void MainApp::InitializationBeforeLoop() {
     setFonts();
     defineStyle();
+
+    Tempo::Shortcut shortcut;
+    shortcut.keys = { CMD_KEY, GLFW_KEY_S };
+    shortcut.name = "Save to clipboard";
+    shortcut.description = "Saves the image to the clipboard";
+    shortcut.callback = [this]() {
+        set_clipboard();
+        };
+    Tempo::KeyboardShortCut::addShortcut(shortcut);
 }
 void MainApp::AfterLoop() {
 }
@@ -73,13 +82,8 @@ float MainApp::check_time() {
 }
 
 void MainApp::set_clipboard() {
-    float fraction = check_time();
-    if (fraction < 1.f || m_has_pasted)
-        return;
     if (m_latex_image == nullptr || m_latex_image->getImage() == nullptr || m_latex_image->getImage()->width() == 0 || m_latex_image->getImage()->height() == 0)
         return;
-
-    return;
 
     m_has_pasted = true;
     auto image = m_latex_image->getImage();
@@ -100,15 +104,12 @@ void MainApp::set_clipboard() {
     clip::set_image(img);
 }
 void MainApp::options() {
-    if (ImGui::CollapsingHeader("Options:")) {
-        // ImGui::Checkbox("Auto copy to clipboard", &m_copy_to_clipboard);
-        ImGui::SetNextItemWidth(200);
-        ImGui::DragInt("Font size", &m_font_size, 1.f, 4, 150);
-        // if (ImGui::TreeNode("Advanced")) {
+    ImGui::SetNextItemWidth(200);
+    ImGui::DragInt("Size", &m_font_size, 1.f, 4, 150);
+    if (ImGui::CollapsingHeader("Other options:")) {
+        ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
         ImGui::ColorEdit4("Text color", m_text_color);
         ImGui::ColorEdit3("Background color (for visualization)", m_background_color);
-        //     ImGui::TreePop();
-        // }
         ImGui::Separator();
     }
 }
@@ -124,27 +125,38 @@ void MainApp::input_field(float width, float height) {
     ImGui::InputTextMultiline("##input", &m_txt, ImVec2(width - 10, height / 3.));
     Tempo::PopFont();
 
-    // Progress bar
+    // Progress bar or shortcut display
     if (m_latex_image != nullptr) {
-        float fraction = check_time();
-        if (fraction < 1) {
-            ImGui::Text("Soon to be copied");
+        if (m_autocopy_to_clipboard) {
+            float fraction = check_time();
+            if (fraction < 1) {
+                ImGui::Text("Soon to be copied");
+            }
+            else {
+                fraction = 1.f;
+                ImGui::TextColored(ImVec4(0.f, 0.7f, 0.f, 1.f), "Copied to clipboard");
+            }
+            auto draw_list = ImGui::GetWindowDrawList();
+            auto cursor_pos = ImGui::GetCursorScreenPos();
+            float progress_bar_width = 150;
+            draw_list->AddLine(
+                ImVec2(cursor_pos.x, cursor_pos.y + 5),
+                ImVec2(cursor_pos.x + progress_bar_width * fraction, cursor_pos.y + 5),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.7f, 0.f, 1.f)),
+                5.f);
+            ImGui::Dummy(ImVec2(0, 10));
         }
         else {
-            fraction = 1.f;
-            ImGui::TextColored(ImVec4(0.f, 0.7f, 0.f, 1.f), "Copied to clipboard");
+            if (m_has_pasted) {
+                ImGui::Text("Copied to clipboard");
+            }
+            else {
+                ImGui::Text("Press %s + S to copy to clipboard", Tempo::getKeyName(CMD_KEY).c_str());
+            }
         }
-        auto draw_list = ImGui::GetWindowDrawList();
-        auto cursor_pos = ImGui::GetCursorScreenPos();
-        float progress_bar_width = 150;
-        draw_list->AddLine(
-            ImVec2(cursor_pos.x, cursor_pos.y + 5),
-            ImVec2(cursor_pos.x + progress_bar_width * fraction, cursor_pos.y + 5),
-            ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.7f, 0.f, 1.f)),
-            5.f);
-        ImGui::Dummy(ImVec2(0, 10));
     }
 }
+
 void MainApp::generate_image() {
     // Generating tex image
     if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size) {
@@ -163,9 +175,6 @@ void MainApp::generate_image() {
         // Copy to clipboard timer
         m_last_checkpoint = std::chrono::high_resolution_clock::now();
         m_has_pasted = false;
-
-        // microtex::Formula formula(m_txt);
-
     }
 }
 void MainApp::result_window(float width) {
@@ -219,5 +228,8 @@ void MainApp::FrameUpdate() {
 
 void MainApp::BeforeFrameUpdate() {
     generate_image();
-    set_clipboard();
+
+    float fraction = check_time();
+    if (fraction >= 1.f && !m_has_pasted && m_autocopy_to_clipboard)
+        set_clipboard();
 }

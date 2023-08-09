@@ -17,7 +17,7 @@ private:
     std::string m_prev_text;
 
     std::string m_current_path;
-    bool m_copy_to_clipboard = true;
+    bool m_autocopy_to_clipboard = false;
     int m_font_size = 50;
     int m_prev_font_size = 50;
     float m_text_color[4] = { 0.f, 0.f, 0.f, 1.f };
