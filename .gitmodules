@@ -1,0 +1,12 @@
+[submodule "external/TempoApp"]
+	path = external/TempoApp
+	url = git@github.com:jokteur/TempoApp.git
+[submodule "external/clip"]
+	path = external/clip
+	url = https://github.com/dacap/clip
+[submodule "external/microtex/MicroTeX"]
+	path = external/microtex/MicroTeX
+	url = https://github.com/NanoMichael/MicroTeX.git
+[submodule "external/IconFontCppHeaders"]
+	path = external/IconFontCppHeaders
+	url = https://github.com/juliettef/IconFontCppHeaders

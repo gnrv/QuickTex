@@ -1,0 +1,855 @@
+\copyright
+\`A
+\'A
+\^A
+\~A
+\\"A
+\r A
+\AE
+\c C
+\`E
+\'E
+\^E
+\\"E
+\`I
+\'I
+\^I
+\\"I
+\~N
+\`O
+\'O
+\^O
+\~O
+\\"O
+\O
+\`U
+\'U
+\^U
+\\"U
+\'Y
+\ss
+\`a
+\'a
+\^a
+\~a
+\\"a
+\aa
+\ae
+\c c
+\`e
+\'e
+\^e
+\\"e
+\`\\i
+\'\\i
+\^\\i
+\\"\\i
+\eth
+\~n
+\`o
+\'o
+\^o
+\~o
+\\"o
+\div
+\o
+\`u
+\'u
+\^u
+\\"u
+\'y
+\\"y
+\=A
+\=a
+\u A
+\u a
+\k A
+\k a
+\'C
+\'c
+\^C
+\^c
+\.C
+\.c
+\v C
+\v c
+\v D
+\Dstrok
+\dstrok
+\=E
+\=e
+\u E
+\u e
+\.E
+\.e
+\k E
+\k e
+\v E
+\v e
+\^G
+\^g
+\u G
+\u g
+\.G
+\.g
+\underaccent{,}G
+\'g
+\^H
+\^h
+\Hstrok
+\hstrok
+\~I
+\~\\i
+\=I
+\=\\i
+\u I
+\u \\i
+\k I
+\k i
+\.I
+\i
+\IJ
+\ij
+\^J
+\^\\j
+\underaccent{,}K
+\underaccent{,}k
+\'L
+\'l
+\underaccent{,}L
+\underaccent{,}l
+\Lcaron
+\lcaron
+\L
+\l
+\'N
+\'n
+\underaccent{,}N
+\underaccent{,}n
+\v N
+\v n
+\text{'}n
+\=O
+\=o
+\u O
+\u o
+\H O
+\H o
+\OE
+\oe
+\'R
+\'r
+\underaccent{,}R
+\underaccent{,}r
+\v R
+\v r
+\'S
+\'s
+\^S
+\^s
+\c S
+\c s
+\v S
+\v s
+\c T
+\c t
+\v T
+\tcaron
+\TStroke
+\tStroke
+\~U
+\~u
+\=U
+\=u
+\u U
+\u u
+\r U
+\r u
+\H U
+\H u
+\k U
+\k u
+\^W
+\^w
+\^Y
+\^y
+\\"Y
+\'Z
+\'z
+\.Z
+\.z
+\v Z
+\v z
+\mathnormal
+\mathfrak
+\mathcal
+\mathbb
+\mathsrc
+\mathds
+\oldstylenums
+\alpha
+\beta
+\gamma
+\delta
+\epsilon
+\zeta
+\eta
+\theta
+\iota
+\kappa
+\lambda
+\mu
+\nu
+\xi
+\omicron
+\pi
+\rho
+\sigma
+\tau
+\upsilon
+\phi
+\chi
+\psi
+\omega
+\varphi
+\vartheta
+\Alpha
+\Beta
+\Gamma
+\Delta
+\Epsilon
+\Zeta
+\Eta
+\Theta
+\Iota
+\Kappa
+\Lambda
+\Mu
+\Nu
+\Xi
+\Omicron
+\Pi
+\Rho
+\Sigma
+\Tau
+\Upsilon
+\Phi
+\Chi
+\Psi
+\Omega
+\nshortparallel
+\leftrightharpoons
+\Rrightarrow
+\supsetneqq
+\ge
+\rhd
+\leqslant
+\downdownarrows
+\gtrsim
+\lessgtr
+\longrightarrow
+\Leftrightarrow
+\leftarrow
+\ominus
+\!
+\otimes
+\lceil
+\partial
+\smallfrown
+\,
+\gg
+\mathbin{\\rlap{>}\\!<}
+\mathbin{><}
+\leftslice
+\rightslice
+\;
+\:
+\hbar
+\swarrow
+\gneqq
+\neq
+\times
+\lnot
+\nsubseteqq
+\uparrow
+\curlyvee
+\setminus
+    {8727, "{}_\\ast"},
+\supsetneq
+\nleftarrow
+\nLeftrightarrow
+\blacktriangledown
+\downharpoonright
+\subseteqq
+\exists
+\emptyset
+\ggg
+\sim
+\lvertneqq
+\|
+\vee
+\bullet
+\subsetneqq
+\triangledown
+\simeq
+\rightrightarrows
+\bigtriangledown
+\nleqslant
+\Rsh
+\searrow
+\blacktriangleleft
+\geq
+\Vert
+\ntrianglerighteq
+\leftrightarrow
+\barwedge
+\ntriangleright
+\rtimes
+\iff
+\circleddash
+\Cup
+\upuparrows
+\ngtr
+\succnsim
+\coloncolonequals
+\lnapprox
+\gtrdot
+\ldots
+\approx
+\lessapprox
+\curlywedge
+\gvertneqq
+\ncong
+\bumpeq
+\Longleftarrow
+\parallel
+\thinspace
+\rangle
+\bigcap
+\clubsuit
+\supset
+\not\\subset
+\not\\supset
+\oslash
+\therefore
+\ratio
+\mathbin{\\ratio\\ratio}
+\succapprox
+\bot
+\gtreqless
+\Bumpeq
+\Updownarrow
+\backepsilon
+\cup
+\Longleftrightarrow
+\preceq
+\doublecup
+\lVert
+\supseteq
+\ngeqslant
+\dagger
+\nsucceq
+\amalg
+\lesseqqgtr
+\leqq
+\circeq
+\smallfrowneq
+\stackrel{\\wedge}{=}
+\stackrel{\\vee}{=}
+\stackrel{\\scalebox{0.8}{\\bigstar}}{=}
+\triangleq
+\stackrel{\\scalebox{0.75}{\\mathrm{def}}}{=}
+\stackrel{\\scalebox{0.75}{\\mathrm{m}}}{=}
+\stackrel{\\scalebox{0.75}{\\mathrm{?}}}{=}
+\leftharpoonup
+\circledcirc
+\nwarrow
+\lnsim
+\smallsmile
+\odot
+\nmid
+\lessdot
+\prime
+\pm
+\sqsupseteq
+\doteq
+\ll
+\geqq
+\heartsuit
+\upharpoonright
+\leftrightarrows
+\rightthreetimes
+\mp
+\npreceq
+\vdots
+\ntriangleleft
+\varpropto
+\star
+\minuscolon
+\geoprop
+\thicksim
+\vartriangleleft
+\blacksquare
+\marker
+\triangle
+\biguplus
+\succnapprox
+\gnapprox
+\ne
+\square
+\ni
+\iddots
+\ddots
+\inplus
+\nvdash
+\coprod
+\shortmid
+\hookleftarrow
+\nRightarrow
+\upharpoonleft
+\boxdot
+\nsupseteq
+\in
+\notin
+\ltimes
+\succ
+\minus
+\succeq
+\restriction
+\int
+\flat
+\Game
+\parr
+\succcurlyeq
+\langle
+\cdot
+\sqcup
+\gimel
+\circledast
+\eqslantless
+\le
+\gtrless
+\propto
+\triangleleft
+\blacktriangle
+\Im
+\bigoplus
+\iiiint
+\backsim
+\infty
+\subset
+\Cap
+\diamond
+\nVdash
+\fallingdotseq
+\colonequals
+\equalscolon
+\between
+\downarrow
+\gets
+\curlyeqsucc
+\uplus
+\in
+\nsubseteq
+\divideontimes
+\lneqq
+\precnsim
+\niplus
+\medspace
+\geqslant
+\asymp
+\doublebarwedge
+\sqsubseteq
+\lmoustache
+\nsim
+\sqcap
+\supseteqq
+\leftthreetimes
+\shortparallel
+\vdash
+\measuredangle
+\subseteq
+\llless
+\lor
+\Leftarrow
+\wp
+\wr
+\bigotimes
+\ngeqq
+\models
+\boxplus
+\rightarrowtail
+\boxminus
+\smallsetminus
+\gtrapprox
+\prec
+\downharpoonleft
+\leadsto
+\owns
+\eqslantgtr
+\cong
+\looparrowleft
+\beth
+\iint
+\vartriangle
+\perp
+\nLeftarrow
+\bigsqcup
+\nabla
+\trianglelefteq
+\sqsubset
+\nexists
+\blacktriangleright
+\wedge
+\angle
+\'
+\bigodot
+\quad
+\circledS
+\Vvdash
+\preccurlyeq
+\triangleright
+\approxeq
+\to
+\veebar
+\Downarrow
+\nvDash
+\lesssim
+\precsim
+\oint
+\subsetneq
+\Vdash
+\diagup
+\sphericalangle
+\diamondsuit
+\dashv
+\nearrow
+\nrightarrow
+\gtreqqless
+\bowtie
+\pitchfork
+\natural
+\succneqq
+\varsupsetneq
+\leftrightsquigarrow
+\cap
+\rmoustache
+\land
+\Supset
+\sum
+\multimap
+\rfloor
+\nleftrightarrow
+\lozenge
+\leftleftarrows
+\rightsquigarrow
+\boxtimes
+\rightleftarrows
+\ntrianglelefteq
+\iiint
+\top
+\rightarrow
+\Re
+\sqsupset
+\twoheadrightarrow
+\blacksquare
+\varsupsetneqq
+\curvearrowleft
+\daleth
+\thickspace
+\gggtr
+\eqcirc
+\varsubsetneqq
+\vert
+\succsim
+\Uparrow
+\nleqq
+\mho
+\text{\\AA}
+\eqsim
+\looparrowright
+\rightharpoonup
+\equiv
+\not\\equiv
+\leftarrowtail
+\lhd
+\bigstar
+\gnsim
+\vDash
+\blacklozenge
+\cdot
+\nless
+\ddagger
+\risingdotseq
+\ell
+\doteqdot
+\lneq
+\Rightarrow
+\Longrightarrow
+\curvearrowright
+\hookrightarrow
+\rVert
+\longleftrightarrow
+\curlyeqprec
+\longleftarrow
+\rightharpoondown
+\hslash
+\doublecap
+\prod
+\updownarrow
+\Lsh
+\nsucc
+\slash
+\leftharpoondown
+\leq
+\mathit{o}
+\aleph
+\nVDash
+\lfloor
+\circ
+\bigcup
+\nshortmid
+\precapprox
+\trianglerighteq
+\mid
+\dotplus
+\nprec
+\cdots
+\Lleftarrow
+\precneqq
+    {8495, "e"},
+\Finv
+\intercal
+\surd
+\bigvee
+\gneq
+\forall
+\precnapprox
+\spadesuit
+\longmapsto
+\llbracket
+\rrbracket
+\langle
+\rangle
+\bigcirc
+\backsimeq
+\div
+\rbrace
+\complement
+\because
+\dotminus
+\triangle
+\twoheadleftarrow
+\epsilon
+\Arrowvert
+\Diamond
+\varsubsetneq
+\arrowvert
+\sharp
+\bigwedge
+\varnothing
+\diagdown
+\mapsto
+\vartriangleright
+\oplus
+\thickapprox
+\rceil
+\Subset
+\rightleftharpoons
+\acute
+\grave
+\ddot
+\doubleacute
+\tilde
+\bmathring
+\bar
+\breve
+\check
+\hat
+\vec
+\dot
+\widehat
+\widetilde
+\mathbb{C}
+\sideset{^\\circ}{}\\text{C}
+\euler
+\sideset{^\\circ}{}\\text{F}
+\mathbb{H}
+\mathbb{N}
+\mathbb{P}
+\mathbb{Q}
+\mathbb{R}
+\mathbb{Z}
+\mathfrak{Z}
+\mathscr{H}
+\mathfrak{H}
+\mathscr{I}
+\mathscr{L}
+\mathscr{R}
+\mathscr{B}
+\mathfrak{C}
+\mathscr{E}
+\mathscr{F}
+\mathscr{M}
+    {64256, "ff"},
+    {64257, "fi"},
+    {58290, "fj"},
+    {64258, "fl"},
+    {64259, "ffi"},
+    {64260, "ffl"},
+\mathbin{\\rlap{<}\\;(}
+\mathbin{\\rlap{>}\\,)}
+\minuso
+\varocircle
+\olessthan
+\ogreaterthan
+\boxslash
+\boxbslash
+\maltese
+\checkmark
+\mathpunct{\\={\\ }}
+\hybull
+\textperthousand
+\textpertenthousand
+\guilsinglleft
+\guilsinglright
+\not\\simeq
+    {8244, "'''"},
+    {8411, "''"},
+    {8216, "`"},
+    {8220, "``"},
+\textapos
+    {8218, ","},
+\textapos\\textapos
+    {8222, ",,"},
+    {8206, " "},
+    {8207, " "},
+\euro
+\textminus
+\textendash
+\textemdash
+\sfrac{a}{c}
+\sfrac{a}{s}
+\sfrac{c}{o}
+\sfrac{c}{u}
+    {8480, "{}^{\\text{TM}}"},
+\ulcorner
+\urcorner
+\llcorner
+\lrcorner
+\text{\\sfrac13}
+\text{sfrac23}
+\text{\\sfrac15}
+\text{\\sfrac25}
+\text{\\sfrac35}
+\text{\\sfrac45}
+\text{\\sfrac16}
+\text{\\sfrac56}
+\text{\\sfrac12}
+\text{\\sfrac14}
+\text{\\sfrac34}
+\text{\\sfrac18}
+\text{\\sfrac38}
+\text{\\sfrac58}
+\text{\\sfrac78}
+\text{\\sfrac{1}{\\ }}
+\text{I}
+\text{II}
+\text{III}
+\text{IV}
+\text{V}
+\text{VI}
+\text{VII}
+\text{VIII}
+\text{IX}
+\text{X}
+\text{XI}
+\text{XII}
+\text{L}
+\text{C}
+\text{D}
+\text{M}
+\text{i}
+\text{ii}
+\text{iii}
+\text{iv}
+\text{v}
+\text{vi}
+\text{vii}
+\text{viii}
+\text{ix}
+\text{x}
+\text{xi}
+\text{xii}
+\text{l}
+\text{c}
+\text{d}
+\text{m}
+\uhblk
+\lhblk
+\block
+\fgcolor{bfbfbf}{\\block}
+\fgcolor{808080}{\\block}
+\fgcolor{404040}{\\block}
+\textcircled{\\texttt 1}
+\textcircled{\\texttt 2}
+\textcircled{\\texttt 3}
+\textcircled{\\texttt 4}
+\textcircled{\\texttt 5}
+\textcircled{\\texttt 6}
+\textcircled{\\texttt 7}
+\textcircled{\\texttt 8}
+\textcircled{\\texttt 9}
+\textcircled{\\texttt A}
+\textcircled{\\texttt B}
+\textcircled{\\texttt C}
+\textcircled{\\texttt D}
+\textcircled{\\texttt E}
+\textcircled{\\texttt F}
+\textcircled{\\texttt G}
+\textcircled{\\texttt H}
+\textcircled{\\texttt I}
+\textcircled{\\texttt J}
+\textcircled{\\texttt K}
+\textcircled{\\texttt L}
+\textcircled{\\texttt M}
+\textcircled{\\texttt N}
+\textcircled{\\texttt O}
+\textcircled{\\texttt P}
+\textcircled{\\texttt Q}
+\textcircled{\\texttt R}
+\textcircled{\\texttt S}
+\textcircled{\\texttt T}
+\textcircled{\\texttt U}
+\textcircled{\\texttt V}
+\textcircled{\\texttt W}
+\textcircled{\\texttt X}
+\textcircled{\\texttt Y}
+\textcircled{\\texttt Z}
+\textcircled{\\texttt a}
+\textcircled{\\texttt b}
+\textcircled{\\texttt c}
+\textcircled{\\texttt d}
+\textcircled{\\texttt e}
+\textcircled{\\texttt f}
+\textcircled{\\texttt g}
+\textcircled{\\texttt h}
+\textcircled{\\texttt i}
+\textcircled{\\texttt j}
+\textcircled{\\texttt k}
+\textcircled{\\texttt l}
+\textcircled{\\texttt m}
+\textcircled{\\texttt n}
+\textcircled{\\texttt o}
+\textcircled{\\texttt p}
+\textcircled{\\texttt q}
+\textcircled{\\texttt r}
+\textcircled{\\texttt s}
+\textcircled{\\texttt t}
+\textcircled{\\texttt u}
+\textcircled{\\texttt v}
+\textcircled{\\texttt w}
+\textcircled{\\texttt x}
+\textcircled{\\texttt y}
+\textcircled{\\texttt z}
+};
