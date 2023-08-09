@@ -27,6 +27,8 @@ private:
     float time_until_clipboard = 1500.f;
     std::chrono::high_resolution_clock::time_point m_last_checkpoint;
     bool m_has_pasted = true;
+    bool m_save_to_file = false;
+    bool m_just_saved_to_file = false;
 
     std::unique_ptr<Latex::LatexImage> m_latex_image = nullptr;
 
@@ -37,6 +39,7 @@ private:
     void generate_image();
     void result_window(float width);
     void set_clipboard();
+    void save_to_file();
 public:
     MainApp();
     virtual ~MainApp() {}

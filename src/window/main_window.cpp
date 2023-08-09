@@ -62,6 +62,18 @@ void MainApp::InitializationBeforeLoop() {
     shortcut.callback = [this]() {
         set_clipboard();
         };
+
+    Tempo::Shortcut shortcut_savetofile;
+    shortcut_savetofile.keys = { CMD_KEY, Tempo::KEY_SHIFT, GLFW_KEY_S };
+    shortcut_savetofile.name = "Save to file";
+    shortcut_savetofile.description = "Saves the image to a file";
+    shortcut_savetofile.callback = [this]() {
+        // if (m_latex_image == nullptr || m_latex_image->getImage() == nullptr || m_latex_image->getImage()->width() == 0 || m_latex_image->getImage()->height() == 0)
+        //     return;
+        m_save_to_file = true;
+        };
+
+    Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
 }
 void MainApp::AfterLoop() {
@@ -103,11 +115,31 @@ void MainApp::set_clipboard() {
     clip::image img(image->getData()->data(), spec);
     clip::set_image(img);
 }
+void MainApp::save_to_file() {
+    if (m_save_to_file) {
+        m_save_to_file = false;
+
+        NFD_Init();
+        std::string filename;
+        nfdchar_t* outPath;
+        nfdfilteritem_t filterItem[1] = { { "PNG Image", "png" } };
+        nfdresult_t result = NFD_SaveDialogU8(&outPath, filterItem, 1, NULL, NULL);
+        if (result == NFD_OKAY) {
+            filename = outPath;
+            NFD_FreePathU8(outPath);
+        }
+        NFD_Quit();
+
+        auto image = m_latex_image->getImage();
+        stbi_write_png(filename.c_str(), image->width(), image->height(), 4, image->getData()->data(), image->width() * 4);
+        m_just_saved_to_file = true;
+    }
+}
 void MainApp::options() {
     ImGui::SetNextItemWidth(200);
     ImGui::DragInt("Size", &m_font_size, 1.f, 4, 150);
     if (ImGui::CollapsingHeader("Other options:")) {
-        ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
+        // ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
         ImGui::ColorEdit4("Text color", m_text_color);
         ImGui::ColorEdit3("Background color (for visualization)", m_background_color);
         ImGui::Separator();
@@ -148,10 +180,13 @@ void MainApp::input_field(float width, float height) {
         }
         else {
             if (m_has_pasted) {
-                ImGui::Text("Copied to clipboard");
+                if (m_just_saved_to_file)
+                    ImGui::Text("Saved to file");
+                else
+                    ImGui::Text("Copied to clipboard");
             }
             else {
-                ImGui::Text("Press %s + S to copy to clipboard", Tempo::getKeyName(CMD_KEY).c_str());
+                ImGui::Text("Press %s + S to copy to clipboard (or %s + Shift + S to save to file)", Tempo::getKeyName(CMD_KEY).c_str(), Tempo::getKeyName(CMD_KEY).c_str());
             }
         }
     }
@@ -175,6 +210,7 @@ void MainApp::generate_image() {
         // Copy to clipboard timer
         m_last_checkpoint = std::chrono::high_resolution_clock::now();
         m_has_pasted = false;
+        m_just_saved_to_file = false;
     }
 }
 void MainApp::result_window(float width) {
@@ -223,6 +259,8 @@ void MainApp::FrameUpdate() {
     input_field(width, height);
     result_window(width);
     ImGui::End();
+
+    save_to_file();
 
 }
 
