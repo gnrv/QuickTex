@@ -39,6 +39,10 @@ size_t LatexEditor::find_line_number(size_t pos) {
     }
     return line_number;
 }
+bool LatexEditor::is_line_begin(size_t pos) {
+    return m_line_positions.find(pos) != m_line_positions.end();
+}
+
 void LatexEditor::parse() {
     m_reparse = false;
     m_wrap_column.clear();
@@ -101,9 +105,8 @@ void LatexEditor::set_text(const std::string& text) {
 }
 
 /* Cursor stuff */
-void LatexEditor::move_up() {
+void LatexEditor::move_up(bool shift) {
     if (m_cursor_line_number > 0) {
-        m_cursor_line_number--;
         m_cursor_find_pos = true;
         m_cursor_pos = find_line_begin(m_cursor_pos);
         m_cursor_pos--;
@@ -111,16 +114,18 @@ void LatexEditor::move_up() {
         while (m_cursor_pos > 0 && m_cursor_last_hpos < m_cursor_pos - line_begin) {
             m_cursor_pos--;
         }
+        m_cursor_line_number = find_line_number(m_cursor_pos);
     }
     else if (m_cursor_pos > 0) {
         m_cursor_pos = 0;
         m_cursor_find_pos = true;
         m_cursor_last_hpos = 0;
     }
+    if (!shift)
+        m_cursor_selection_begin = m_cursor_pos;
 }
-void LatexEditor::move_down() {
+void LatexEditor::move_down(bool shift) {
     if (m_cursor_line_number < m_line_positions.size() - 1) {
-        m_cursor_line_number++;
         m_cursor_find_pos = true;
         m_cursor_pos = find_line_end(m_cursor_pos);
         m_cursor_pos++;
@@ -131,46 +136,51 @@ void LatexEditor::move_down() {
         if (m_cursor_pos > m_text.size()) {
             m_cursor_pos--;
         }
+        m_cursor_line_number = find_line_number(m_cursor_pos);
     }
     else if (m_cursor_pos < m_text.size()) {
         m_cursor_pos = m_text.size();
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
+    if (!shift)
+        m_cursor_selection_begin = m_cursor_pos;
 }
-void LatexEditor::move_left(bool word) {
+void LatexEditor::move_left(bool word, bool shift) {
     if (m_cursor_pos > 0) {
         if (m_line_positions.find(m_cursor_pos) != m_line_positions.end()) {
-            m_cursor_line_number--;
             m_cursor_pos--;
         }
         else if (word) {
             m_cursor_pos = find_previous_word(m_cursor_pos);
-            m_cursor_line_number = find_line_number(m_cursor_pos);
         }
         else {
             m_cursor_pos--;
         }
+        m_cursor_line_number = find_line_number(m_cursor_pos);
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
+    if (!shift)
+        m_cursor_selection_begin = m_cursor_pos;
 }
-void LatexEditor::move_right(bool word) {
+void LatexEditor::move_right(bool word, bool shift) {
     if (m_cursor_pos < m_text.size()) {
         if (m_line_positions.find(m_cursor_pos + 1) != m_line_positions.end()) {
-            m_cursor_line_number++;
             m_cursor_pos++;
         }
         else if (word) {
             m_cursor_pos = find_next_word(m_cursor_pos);
-            m_cursor_line_number = find_line_number(m_cursor_pos);
         }
         else {
             m_cursor_pos++;
         }
+        m_cursor_line_number = find_line_number(m_cursor_pos);
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
+    if (!shift)
+        m_cursor_selection_begin = m_cursor_pos;
 }
 size_t LatexEditor::find_next_word(size_t pos) {
     if (is_whitespace(m_text[pos])) {
@@ -217,42 +227,19 @@ void LatexEditor::set_line_height() {
         if (m_is_line_height_set) {
             WrapAlgorithm wrapper;
             wrapper.setWidth(5000000, false);
+            wrapper.setLineSpace(m_line_space, false);
             wrapper.setTextColumn(&col);
             auto& subline = col[0].sublines.front();
             m_line_height = subline.max_ascent + subline.max_descent;
         }
     }
 }
-void LatexEditor::draw_cursor() {
-    if (m_cursor_find_pos && m_wrap_column.find(m_cursor_line_number) != m_wrap_column.end()) {
-        m_cursor_find_pos = false;
-        auto& line = m_wrap_column[m_cursor_line_number];
-        bool found_next_char = false;
-        float last_x_pos = 0.f;
-        m_cursor_drawpos = ImVec2(0, line.relative_y_pos);
-        for (auto ch : line.chars) {
-            if (ch->text_position > m_cursor_pos) {
-                m_cursor_drawpos.x = ch->calculated_position.x;
-                found_next_char = true;
-                break;
-            }
-            last_x_pos = ch->calculated_position.x + ch->info->advance;
-        }
-        if (!found_next_char) {
-            m_cursor_drawpos.x = last_x_pos;
-        }
-    }
-    ImVec2 pos = ImGui::GetCursorScreenPos() + m_cursor_drawpos;
-    pos.x -= 1.f;
-    ImVec2 end_pos = pos;
-    end_pos.y += m_line_height;
-    m_draw_list->AddLine(pos, end_pos, Colors::lightgray, 1.f);
-}
 
 void LatexEditor::keyboard_events() {
     // if (ImGui::IsWindowFocused()) {
         // Last key pressed ?
         // Order of priority
+    auto& io = ImGui::GetIO();
     int left = ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) ? LEFT : 0;
     int right = ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) ? RIGHT : 0;
     int up = ImGui::IsKeyPressed(ImGuiKey_UpArrow, true) ? UP : 0;
@@ -268,22 +255,93 @@ void LatexEditor::keyboard_events() {
         to_press = current_key_presses;
     }
     if (to_press & LEFT) {
-        move_left(ImGui::GetIO().KeyCtrl);
+        move_left(io.KeyCtrl, io.KeyShift);
     }
     else if (to_press & RIGHT) {
-        move_right(ImGui::GetIO().KeyCtrl);
+        move_right(io.KeyCtrl, io.KeyShift);
     }
     else if (to_press & UP) {
-        move_up();
+        move_up(io.KeyShift);
     }
     else if (to_press & DOWN) {
-        move_down();
+        move_down(io.KeyShift);
     }
-    m_key_presses = current_key_presses;
+    // else if (Imgui::IsKeyPressed(ImGuiKey_Delete)) {
+    //     if (ImGui::GetIO().KeyCtrl)
+    //         delete_at(m_cursor_pos, find_next_word(m_cursor_pos));
+    //     else
+    //         delete_at(m_cursor_pos, m_cursor_pos + 1);
+    // }
+    // else if (ImGui::IsKeyPressed())
+    //     m_key_presses = current_key_presses;
     // }
     // else {
     //     m_key_presses = 0;
     // }
+}
+ImVec2 LatexEditor::find_char_placement(size_t pos, bool half_line_space) {
+    size_t line_number = find_line_number(pos);
+    auto& line = m_wrap_column[line_number];
+    bool found_next_char = false;
+    float last_x_pos = 0.f;
+    ImVec2 out_pos(0, line.relative_y_pos);
+    for (auto ch : line.chars) {
+        if (ch->text_position > pos) {
+            out_pos.x = ch->calculated_position.x;
+            found_next_char = true;
+            break;
+        }
+        last_x_pos = ch->calculated_position.x + ch->info->advance;
+    }
+    if (!found_next_char) {
+        out_pos.x = last_x_pos;
+    }
+    if (half_line_space) {
+        out_pos.y -= m_line_height * (m_line_space - 1.f) / 2.f;
+    }
+    return out_pos;
+}
+void LatexEditor::draw_cursor() {
+    if (m_cursor_find_pos && m_wrap_column.find(m_cursor_line_number) != m_wrap_column.end()) {
+        m_cursor_find_pos = false;
+        m_cursor_drawpos = find_char_placement(m_cursor_pos, true);
+    }
+    ImVec2 pos = ImGui::GetCursorScreenPos() + m_cursor_drawpos;
+    pos.x -= 1.f;
+    ImVec2 end_pos = pos;
+    end_pos.y += m_line_height;
+    m_draw_list->AddLine(pos, end_pos, Colors::lightgray, 1.f);
+}
+void LatexEditor::char_decoration() {
+    size_t min_sel = std::min(m_cursor_pos, m_cursor_selection_begin);
+    size_t max_sel = std::max(m_cursor_pos, m_cursor_selection_begin);
+
+    ImVec2 highlight_from;
+    ImVec2 highlight_to;
+    bool start_selection = false;
+
+    auto screen_pos = ImGui::GetCursorScreenPos();
+    for (size_t i = min_sel; i < max_sel;i++) {
+        if (!start_selection) {
+            start_selection = true;
+            highlight_from = find_char_placement(i, true);
+        }
+        if (m_text[i] == '\n') {
+            start_selection = false;
+            highlight_to = find_char_placement(i, true);
+            highlight_to.y += m_line_height * m_line_space;
+            highlight_from += screen_pos;
+            highlight_to += screen_pos;
+            m_draw_list->AddRectFilled(highlight_from, highlight_to, ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f)));
+        }
+    }
+    if (start_selection) {
+        highlight_to = find_char_placement(max_sel, true);
+        highlight_to.y += m_line_height * m_line_space;
+        highlight_from += screen_pos;
+        highlight_to += screen_pos;
+        m_draw_list->AddRectFilled(highlight_from, highlight_to, ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f)));
+    }
 }
 
 void LatexEditor::draw(std::string& latex, ImVec2 size) {
@@ -312,6 +370,7 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
 
     m_draw_list.SetImDrawList(ImGui::GetWindowDrawList());
 
+    char_decoration();
     for (auto& pair : m_wrap_column) {
         ImVec2 pos;
         for (auto& ptr : pair.second.chars) {

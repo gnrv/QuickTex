@@ -16,6 +16,8 @@ private:
     bool m_suggset = false;
     bool m_reparse = false;
 
+    float m_line_space = 1.2f;
+
     WrapColumn m_wrap_column;
     std::map<size_t, size_t> m_commands;
     std::map<size_t, size_t> m_openings_to_closings;
@@ -27,6 +29,7 @@ private:
     bool m_is_line_height_set = false;
     bool m_cursor_find_pos = true;
     size_t m_cursor_pos = 0;
+    size_t m_cursor_selection_begin = 0;
     size_t m_cursor_line_number = 0;
     size_t m_cursor_last_hpos = 0;
     ImVec2 m_cursor_drawpos;
@@ -41,11 +44,12 @@ private:
     size_t find_line_begin(size_t pos);
     size_t find_line_end(size_t pos);
     size_t find_line_number(size_t pos);
+    bool is_line_begin(size_t pos);
 
-    void move_up();
-    void move_down();
-    void move_left(bool word = false);
-    void move_right(bool word = false);
+    void move_up(bool shift);
+    void move_down(bool shift);
+    void move_left(bool word = false, bool shift = false);
+    void move_right(bool word = false, bool shift = false);
     void set_line_height();
 
     /**
@@ -69,7 +73,10 @@ private:
     void end();
     void select_word();
 
+    ImVec2 find_char_placement(size_t pos, bool half_line_space = false);
+
     void draw_cursor();
+    void char_decoration();
 
     void keyboard_events();
 
