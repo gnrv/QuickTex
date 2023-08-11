@@ -8,6 +8,9 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 
+#include "state.h"
+#include "latex/editor.h"
+
 // Drawable and widgets
 int TextInputCallback(ImGuiInputTextCallbackData* data);
 
@@ -29,6 +32,8 @@ private:
     bool m_has_pasted = true;
     bool m_save_to_file = false;
     bool m_just_saved_to_file = false;
+
+    LatexEditor m_latex_editor;
 
     std::unique_ptr<Latex::LatexImage> m_latex_image = nullptr;
 

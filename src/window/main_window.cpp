@@ -6,7 +6,6 @@
 #include "fonts/fonts.h"
 #include "state.h"
 #include "clip.h"
-#include "latex/editor.h"
 
 #include "imgui_stdlib.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -44,7 +43,7 @@ void setFonts() {
     icons_config.GlyphOffset = ImVec2(0, 4.f);
     icons_config.MergeMode = true;
 
-    // Tempo::AddIconsToFont(state.font_regular,
+    // Tempo::AddIconsToFont(default_,
     //     "data/fonts/Icons/material-design-icons/MaterialIcons-Regular.ttf", icons_config, icons_ranges
     // );
 }
@@ -68,8 +67,6 @@ void MainApp::InitializationBeforeLoop() {
     shortcut_savetofile.name = "Save to file";
     shortcut_savetofile.description = "Saves the image to a file";
     shortcut_savetofile.callback = [this]() {
-        // if (m_latex_image == nullptr || m_latex_image->getImage() == nullptr || m_latex_image->getImage()->width() == 0 || m_latex_image->getImage()->height() == 0)
-        //     return;
         m_save_to_file = true;
         };
 
@@ -157,6 +154,10 @@ void MainApp::input_field(float width, float height) {
     ImGui::InputTextMultiline("##input", &m_txt, ImVec2(width - 10, height / 3.));
     Tempo::PopFont();
 
+    ImGui::Separator();
+    m_latex_editor.draw(m_txt);
+    ImGui::Separator();
+
     // Progress bar or shortcut display
     if (m_latex_image != nullptr) {
         if (m_autocopy_to_clipboard) {
@@ -194,6 +195,9 @@ void MainApp::input_field(float width, float height) {
 
 void MainApp::generate_image() {
     // Generating tex image
+    if (m_txt != m_prev_text) {
+        m_latex_editor.set_text(m_txt);
+    }
     if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size) {
         m_prev_text = m_txt;
         m_prev_font_size = m_font_size;

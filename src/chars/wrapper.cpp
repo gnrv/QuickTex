@@ -168,8 +168,10 @@ void WrapAlgorithm::recalculate() {
         return;
     m_height = 0.f;
     auto width_it = m_widths.begin();
+    float line_y_pos = 0.f;
     for (auto& pair : m_text_column->getParagraph()) {
         auto& line = pair.second;
+        line.relative_y_pos = line_y_pos;
         m_width = *width_it;
         m_current_string = &line.chars;
         m_x_offset = 0.f;
@@ -181,6 +183,7 @@ void WrapAlgorithm::recalculate() {
             height += subline.height;
         }
         pair.second.height = height;
+        line_y_pos += height;
         auto next = std::next(width_it);
         if (next != m_widths.end())
             width_it = next;
