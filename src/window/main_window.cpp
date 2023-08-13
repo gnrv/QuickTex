@@ -135,6 +135,8 @@ void MainApp::save_to_file() {
 void MainApp::options() {
     ImGui::SetNextItemWidth(200);
     ImGui::DragInt("Size", &m_font_size, 1.f, 4, 150);
+    ImGui::SameLine();
+    ImGui::Checkbox("Inline", &m_inline);
     if (ImGui::CollapsingHeader("Other options:")) {
         // ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
         ImGui::ColorEdit4("Text color", m_text_color);
@@ -195,18 +197,23 @@ void MainApp::input_field(float width, float height) {
 
 void MainApp::generate_image() {
     // Generating tex image
-    if (m_txt != m_prev_text) {
+    if (m_prev_text != m_txt) {
         m_latex_editor.set_text(m_txt);
     }
-    if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size) {
+    if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size || m_inline != m_prev_inline) {
         m_prev_text = m_txt;
         m_prev_font_size = m_font_size;
+        m_prev_inline = m_inline;
         m_prev_text_color[0] = m_text_color[0];
         m_prev_text_color[1] = m_text_color[1];
         m_prev_text_color[2] = m_text_color[2];
         m_prev_text_color[3] = m_text_color[3];
+        std::string latex = m_txt;
+        if (!m_inline) {
+            latex = "\\[" + m_txt + "\\]";
+        }
         m_latex_image = std::make_unique<Latex::LatexImage>(
-            m_txt, (float)m_font_size * Tempo::GetScaling(),
+            latex, (float)m_font_size * Tempo::GetScaling(),
             7.f,
             ImGui::ColorConvertFloat4ToU32(ImVec4(m_text_color[0], m_text_color[1], m_text_color[2], m_text_color[3])),
             ImVec2(1.f, 1.f), ImVec2(0.f, 0.f));
