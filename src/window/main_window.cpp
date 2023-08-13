@@ -19,13 +19,13 @@ void setFonts() {
     using Fs = FontStyling;
     auto& state = UIState::getInstance();
     // Regular fonts
-    state.font_manager.setFontPath(Fs{ F_REGULAR, W_REGULAR, S_NORMAL }, "data/fonts/Ubuntu/Ubuntu-R.ttf");
-    state.font_manager.setFontPath(Fs{ F_REGULAR, W_REGULAR, S_ITALIC }, "data/fonts/Ubuntu/Ubuntu-RI.ttf");
-    state.font_manager.setFontPath(Fs{ F_REGULAR, W_BOLD, S_NORMAL }, "data/fonts/Ubuntu/Ubuntu-B.ttf");
-    state.font_manager.setFontPath(Fs{ F_REGULAR, W_BOLD, S_ITALIC }, "data/fonts/Ubuntu/Ubuntu-BI.ttf");
+    state.font_manager.setFontPath(Fs{ F_REGULAR, W_REGULAR, S_NORMAL }, "data/fonts/ubuntu/Ubuntu-R.ttf");
+    state.font_manager.setFontPath(Fs{ F_REGULAR, W_REGULAR, S_ITALIC }, "data/fonts/ubuntu/Ubuntu-RI.ttf");
+    state.font_manager.setFontPath(Fs{ F_REGULAR, W_BOLD, S_NORMAL }, "data/fonts/ubuntu/Ubuntu-B.ttf");
+    state.font_manager.setFontPath(Fs{ F_REGULAR, W_BOLD, S_ITALIC }, "data/fonts/ubuntu/Ubuntu-BI.ttf");
 
     // Monospace fonts
-    state.font_manager.setFontPath(Fs{ F_MONOSPACE, W_REGULAR, S_NORMAL }, "data/fonts/Ubuntu/UbuntuMono-R.ttf");
+    state.font_manager.setFontPath(Fs{ F_MONOSPACE, W_REGULAR, S_NORMAL }, "data/fonts/ubuntu/UbuntuMono-R.ttf");
 
     FontRequestInfo default_font;
     default_font.size_wish = 18.f;
@@ -37,15 +37,9 @@ void setFonts() {
     ImVector<ImWchar> icons_ranges;
     icons_ranges.push_back(static_cast<ImWchar>(ICON_MIN_MD));
     icons_ranges.push_back(static_cast<ImWchar>(ICON_MAX_MD));
-    icons_ranges.push_back(static_cast<ImWchar>(0));
-    ImFontConfig icons_config;
-    // icons_config.PixelSnapH = true;
-    icons_config.GlyphOffset = ImVec2(0, 4.f);
-    icons_config.MergeMode = true;
-
-    // Tempo::AddIconsToFont(default_,
-    //     "data/fonts/Icons/material-design-icons/MaterialIcons-Regular.ttf", icons_config, icons_ranges
-    // );
+    state.font_manager.addIconsToFont(Fs{ F_REGULAR, W_REGULAR, S_NORMAL },
+        "data/fonts/material-design-icons/MaterialIcons-Regular.ttf", icons_ranges
+    );
 }
 MainApp::MainApp() {
 
@@ -72,6 +66,12 @@ void MainApp::InitializationBeforeLoop() {
 
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
+
+    m_txt = "\\begin{align}\n"
+        "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
+        "       &=(x+y)(x^2+2xy+y^2)\\\\\n"
+        "       &=x^3+3x^2y+3xy^3+x^3.\n"
+        "\\end{align}";
 }
 void MainApp::AfterLoop() {
 }
@@ -150,13 +150,13 @@ void MainApp::input_field(float width, float height) {
     request.font_styling = { Fonts::F_MONOSPACE, Fonts::W_REGULAR, Fonts::S_NORMAL };
     request.size_wish = 18;
     UIState::getInstance().font_manager.requestFont(request, font_out);
-    Tempo::PushFont(font_out.font_id);
-    ImGui::InputTextMultiline("##input", &m_txt, ImVec2(width - 10, height / 3.));
-    Tempo::PopFont();
 
     ImGui::Separator();
     m_latex_editor.draw(m_txt);
     ImGui::Separator();
+    if (m_latex_editor.has_text_changed()) {
+        m_txt = m_latex_editor.get_text();
+    }
 
     // Progress bar or shortcut display
     if (m_latex_image != nullptr) {

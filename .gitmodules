@@ -5,7 +5,7 @@
 	path = external/clip
 	url = https://github.com/dacap/clip
 [submodule "external/microtex/MicroTeX"]
-	path = external/microtex/MicroTeX
+	path = external/microtex/microtex
 	url = https://github.com/NanoMichael/MicroTeX.git
 [submodule "external/IconFontCppHeaders"]
 	path = external/IconFontCppHeaders
