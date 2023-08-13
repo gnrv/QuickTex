@@ -32,6 +32,8 @@ size_t LatexEditor::find_line_end(size_t pos) {
 size_t LatexEditor::find_line_number(size_t pos) {
     // Quick for tiny text
     size_t line_number = 0;
+    if (m_line_positions.size() <= 1)
+        return 0;
     for (auto it = std::next(m_line_positions.begin());it != m_line_positions.end();it++) {
         if (*it > pos)
             break;
@@ -56,6 +58,11 @@ void LatexEditor::set_last_key_pressed(int key) {
 }
 void LatexEditor::events(const Rect& boundaries) {
     auto& io = ImGui::GetIO();
+    bool ctrl_or_cmd = io.KeyCtrl;
+#ifdef __APPLE__
+    ctrl_or_cmd = io.KeySuper;
+#endif
+
     int current_key_presses = ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) ? K_LEFT : 0
         | ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) ? K_RIGHT : 0
         | ImGui::IsKeyPressed(ImGuiKey_UpArrow, true) ? K_UP : 0
@@ -65,7 +72,7 @@ void LatexEditor::events(const Rect& boundaries) {
         | ImGui::IsKeyPressed(ImGuiKey_Delete, true) ? K_DEL : 0
         | ImGui::IsKeyPressed(ImGuiKey_Backspace, true) ? K_BACKSPACE : 0
         | ImGui::IsKeyPressed(ImGuiKey_Tab, true) ? K_TAB : 0
-        | ImGui::IsKeyPressed(ImGuiKey_Enter, true) ? K_ENTER : 0
+        | ImGui::IsKeyPressed(ImGuiKey_Enter, true) || ImGui::IsKeyPressed(ImGuiKey_KeyPadEnter) ? K_ENTER : 0
         | ImGui::IsKeyPressed(ImGuiKey_Escape, true) ? K_ESCAPE : 0;
     int new_key_presses = current_key_presses & ~m_key_presses;
     int to_press = 0;
@@ -78,11 +85,11 @@ void LatexEditor::events(const Rect& boundaries) {
             to_press = current_key_presses;
         }
         if (to_press & K_LEFT) {
-            move_left(io.KeyCtrl, io.KeyShift);
+            move_left(ctrl_or_cmd, io.KeyShift);
             set_last_key_pressed(K_LEFT);
         }
         else if (to_press & K_RIGHT) {
-            move_right(io.KeyCtrl, io.KeyShift);
+            move_right(ctrl_or_cmd, io.KeyShift);
             set_last_key_pressed(K_RIGHT);
         }
         else if (to_press & K_UP) {
@@ -107,7 +114,7 @@ void LatexEditor::events(const Rect& boundaries) {
 
             }
             else if (m_cursor_pos > 0) {
-                if (io.KeyCtrl)
+                if (ctrl_or_cmd)
                     delete_at(find_previous_word(m_cursor_pos), m_cursor_pos, false);
                 else
                     delete_at(m_cursor_pos - 1, m_cursor_pos, false);
@@ -118,7 +125,7 @@ void LatexEditor::events(const Rect& boundaries) {
                 delete_at(m_cursor_selection_begin, m_cursor_pos, false);
             }
             else if (m_cursor_pos < m_text.size()) {
-                if (io.KeyCtrl)
+                if (ctrl_or_cmd)
                     delete_at(m_cursor_pos, find_next_word(m_cursor_pos), false);
                 else
                     delete_at(m_cursor_pos, m_cursor_pos + 1, false);
@@ -141,14 +148,30 @@ void LatexEditor::events(const Rect& boundaries) {
             io.InputQueueCharacters.resize(0);
         }
         // Todo: proper shortcuts, with cmd or ctrl
-        else if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A)) {
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_A)) {
             m_cursor_selection_begin = 0;
             m_cursor_pos = m_text.size();
             m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
             m_cursor_find_pos = true;
         }
-        else if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D)) {
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_D)) {
             select_word();
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_D)) {
+            select_word();
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_C)) {
+            ImGui::SetClipboardText(m_text.substr(m_cursor_selection_begin, m_cursor_pos - m_cursor_selection_begin).c_str());
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_V)) {
+            std::string to_insert = ImGui::GetClipboardText();
+            insert_with_selection(to_insert);
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_X)) {
+            ImGui::SetClipboardText(m_text.substr(m_cursor_selection_begin, m_cursor_pos - m_cursor_selection_begin).c_str());
+            delete_at(m_cursor_selection_begin, m_cursor_pos, false);
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_Z)) {
         }
     }
 
@@ -157,6 +180,7 @@ void LatexEditor::events(const Rect& boundaries) {
     auto relative_pos = mouse_pos - cursor_pos;
 
     if (isInsideRect(mouse_pos, boundaries)) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
         if (ImGui::IsMouseClicked(0)) {
             m_is_focused = true;
             m_cursor_pos = coordinate_to_charpos(relative_pos);
@@ -165,12 +189,7 @@ void LatexEditor::events(const Rect& boundaries) {
             m_cursor_line_number = find_line_number(m_cursor_pos);
             m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
             m_cursor_find_pos = true;
-        }
-        else if (ImGui::IsMouseDragging(0)) {
-            m_cursor_pos = coordinate_to_charpos(relative_pos);
-            m_cursor_line_number = find_line_number(m_cursor_pos);
-            m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
-            m_cursor_find_pos = true;
+            m_start_dragging = true;
         }
         else if (ImGui::IsMouseDoubleClicked(0)) {
             std::cout << "Double clicked" << std::endl;
@@ -181,6 +200,15 @@ void LatexEditor::events(const Rect& boundaries) {
         if (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2)) {
             m_is_focused = false;
         }
+    }
+    if (ImGui::IsMouseReleased(0)) {
+        m_start_dragging = false;
+    }
+    if (m_start_dragging) {
+        m_cursor_pos = coordinate_to_charpos(relative_pos);
+        m_cursor_line_number = find_line_number(m_cursor_pos);
+        m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
+        m_cursor_find_pos = true;
     }
     // else if (Imgui::IsKeyPressed(ImGuiKey_Delete)) {
     //     if (ImGui::GetIO().KeyCtrl)
@@ -240,6 +268,8 @@ void LatexEditor::parse() {
     m_line_positions.clear();
     m_commands.clear();
     m_openings_to_closings.clear();
+    m_total_width = 0.f;
+    m_total_height = 0.f;
 
     auto& ui_state = UIState::getInstance();
     Style style;
@@ -262,6 +292,8 @@ void LatexEditor::parse() {
             line_start = i;
             line_count++;
             m_line_positions.insert(i + 1);
+            auto& line = m_wrap_column[line_count];
+            line.height = m_line_height * m_line_space;
         }
         else if (m_text[i] == '\\') {
             size_t command_start = i;
@@ -291,7 +323,15 @@ void LatexEditor::parse() {
     WrapAlgorithm wrapper;
     wrapper.setWidth(5000000, false);
     wrapper.setLineSpace(m_line_space, false);
+    wrapper.setDefaultEmptyLineHeight(m_line_height * m_line_space, false);
     wrapper.setTextColumn(&m_wrap_column);
+    m_total_height = wrapper.getHeight();
+    for (auto& pair : m_wrap_column.getParagraph()) {
+        auto& line = pair.second;
+        if (line.sublines.size() > 0 && line.sublines.front().width > m_total_width) {
+            m_total_width = line.sublines.front().width;
+        }
+    }
 }
 
 void LatexEditor::set_text(const std::string& text) {
@@ -328,7 +368,8 @@ void LatexEditor::move_down(bool shift) {
         m_cursor_pos = find_line_end(m_cursor_pos);
         m_cursor_pos++;
         size_t line_begin = m_cursor_pos;
-        while (m_cursor_pos < m_text.size() && m_cursor_last_hpos > m_cursor_pos - line_begin) {
+        size_t line_end = find_line_end(m_cursor_pos);
+        while (m_cursor_pos < m_text.size() && m_cursor_last_hpos > m_cursor_pos - line_begin && m_cursor_pos < line_end) {
             m_cursor_pos++;
         }
         if (m_cursor_pos > m_text.size()) {
@@ -458,7 +499,8 @@ size_t LatexEditor::find_previous_word(size_t pos) {
         while (pos > 0 && !is_alphanum(m_text[pos]) && !is_whitespace(m_text[pos]))
             pos--;
     }
-    pos++;
+    if (pos > 0)
+        pos++;
     return pos;
 }
 size_t LatexEditor::find_home(size_t pos, bool skip_whitespace) {
@@ -502,7 +544,7 @@ void LatexEditor::set_std_char_info() {
     }
 }
 
-ImVec2 LatexEditor::find_char_placement(size_t pos, bool half_line_space) {
+ImVec2 LatexEditor::locate_char_coord(size_t pos, bool half_line_space) {
     size_t line_number = find_line_number(pos);
     auto& line = m_wrap_column[line_number];
     bool found_next_char = false;
@@ -525,9 +567,17 @@ ImVec2 LatexEditor::find_char_placement(size_t pos, bool half_line_space) {
     return out_pos;
 }
 void LatexEditor::draw_cursor() {
-    if (m_cursor_find_pos && m_wrap_column.find(m_cursor_line_number) != m_wrap_column.end()) {
+    if (!m_is_focused)
+        return;
+
+    if (m_cursor_find_pos) {
         m_cursor_find_pos = false;
-        m_cursor_drawpos = find_char_placement(m_cursor_pos, true);
+        if (m_wrap_column.find(m_cursor_line_number) != m_wrap_column.end()) {
+            m_cursor_drawpos = locate_char_coord(m_cursor_pos, true);
+        }
+        else {
+            m_cursor_drawpos = ImVec2(0, 0);
+        }
     }
     ImVec2 pos = ImGui::GetCursorScreenPos() + m_cursor_drawpos;
     pos.x -= 1.f;
@@ -571,11 +621,11 @@ void LatexEditor::char_decoration(size_t from, size_t to, const std::vector<Char
     for (size_t i = from; i < to;i++) {
         if (!start_selection) {
             start_selection = true;
-            highlight_from = find_char_placement(i, true);
+            highlight_from = locate_char_coord(i, true);
         }
         if (m_text[i] == '\n') {
             start_selection = false;
-            highlight_to = find_char_placement(i, true);
+            highlight_to = locate_char_coord(i, true);
             highlight_to.y += m_line_height * m_line_space;
             highlight_from += screen_pos;
             highlight_to += screen_pos;
@@ -587,7 +637,7 @@ void LatexEditor::char_decoration(size_t from, size_t to, const std::vector<Char
         }
     }
     if (start_selection) {
-        highlight_to = find_char_placement(to, true);
+        highlight_to = locate_char_coord(to, true);
         highlight_to.y += m_line_height * m_line_space;
         highlight_from += screen_pos;
         highlight_to += screen_pos;
@@ -628,6 +678,7 @@ void LatexEditor::debug_window() {
         ImGui::Text("Cursor last h pos: %d", m_cursor_last_hpos);
         ImGui::Text("Is focused: %d", m_is_focused);
         ImGui::Text("Text size: %d", m_text.size());
+        ImGui::Text("Width %f height %f", m_total_width, m_total_height);
         ImGui::End();
     }
 }
@@ -640,18 +691,19 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
     if (size.y == 0) {
         size.y = emfloat{ 150 }.getFloat();
     }
+    float set_x = size.x;
     if (size.x == 0) {
         size.x = ImGui::GetContentRegionAvail().x;
     }
-    ImGui::BeginChild("latex_editor", size, true);
+    ImGui::BeginChild("latex_editor", size, true, ImGuiWindowFlags_HorizontalScrollbar);
     if (m_reparse) {
         parse();
     }
     Rect boundaries;
     boundaries.x = ImGui::GetCursorScreenPos().x;
     boundaries.y = ImGui::GetCursorScreenPos().y;
-    boundaries.w = size.x;
-    boundaries.h = size.y;
+    boundaries.w = ImGui::GetContentRegionAvail().x;
+    boundaries.h = ImGui::GetContentRegionAvail().y;
     events(boundaries);
     if (m_reparse) {
         parse();
@@ -671,6 +723,8 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
             p->draw(&m_draw_list, boundaries, pos);
         }
     }
+
+    ImGui::SetCursorPos(ImVec2(m_total_width, m_total_height));
     ImGui::EndChild();
 }
 

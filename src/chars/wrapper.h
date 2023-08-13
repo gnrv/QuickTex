@@ -40,6 +40,7 @@ typedef std::vector<WrapCharPtr> WrapString;
 struct SubLine {
     int start;
     float height = 0.f;
+    float width = 0.f;
     float rel_y_pos;
     float max_ascent = 0.f;
     float max_descent = 0.f;
@@ -49,7 +50,6 @@ struct WrapLine {
     std::vector<SubLine> sublines;
     WrapString chars;
     float relative_y_pos = 0.f;
-    float width = 0.f;
     float height = 0.f;
 };
 
@@ -94,10 +94,11 @@ private:
     std::vector<float> m_widths = { 1.f };
     float m_width;
     float m_x_offset = 0.f;
-    float m_height = 0.f;
+    float m_current_height = 0.f;
     float m_line_space = 1.3f;
     float m_first_max_ascent = 0.f;
     float m_first_max_descent = 0.f;
+    float m_default_empty_line_height = 15.f;
 
     /**
      * @brief Returns the index of the line which contains pos
@@ -125,10 +126,11 @@ public:
     void clear();
     void recalculate();
     void recalculate(WrapLine* line, float x_offset = 0.f);
-    float getHeight() { return m_height; }
+    float getHeight() { return m_current_height; }
     float getFirstMaxAscent() { return m_first_max_ascent; }
     float getFirstMaxDescent() { return m_first_max_descent; }
 
+    void setDefaultEmptyLineHeight(float height, bool redo = true);
     void setWidth(float width, bool redo = true);
     void setWidth(const std::vector<float>& width, bool redo = true);
     void setLineSpace(float line_space, bool redo = true);

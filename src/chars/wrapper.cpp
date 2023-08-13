@@ -29,7 +29,7 @@ inline void WrapAlgorithm::push_char_on_line(WrapCharPtr c, float* cursor_pos_x)
 }
 inline void WrapAlgorithm::push_new_line(std::list<SubLine>::iterator& line_it, int cursor_idx, float* cursor_pos_x) {
     //ZoneScoped;
-    m_sublines.insert(std::next(line_it), SubLine{ cursor_idx, 0.f });
+    m_sublines.insert(std::next(line_it), SubLine{ cursor_idx, 0.f, *cursor_pos_x });
     line_it++;
     *cursor_pos_x = m_x_offset;
 }
@@ -45,7 +45,7 @@ void WrapAlgorithm::algorithm() {
     m_line_positions.clear();
     m_sublines.push_back(SubLine{ 0, 0.f });
     m_line_positions.insert(0);
-    // m_height = 0.f;
+    // m_current_height = 0.f;
 
     int start = 0;
     int end = m_current_string->size() - 1;
@@ -119,13 +119,15 @@ void WrapAlgorithm::algorithm() {
                 push_char_on_line(c, &cursor_pos_x);
             }
         }
+        m_sublines.back().width = cursor_pos_x;
+
         // line_it_end = current_line_it;
     }
     // ==== SECTION 2 ====
     // Calculation of char vertical positions
     {
         //ZoneScoped;
-        float cursor_pos_y = m_height;
+        float cursor_pos_y = m_current_height;
         float max_ascent = 0.f;
         float max_descent = 0.f;
         for (auto current_line_it = m_sublines.begin();current_line_it != m_sublines.end();current_line_it++) {
@@ -160,13 +162,13 @@ void WrapAlgorithm::algorithm() {
             current_line_it->max_descent = max_descent;
             cursor_pos_y += current_line_it->height;
         }
-        m_height = cursor_pos_y;
+        m_current_height = cursor_pos_y;
     }
 }
 void WrapAlgorithm::recalculate() {
     if (m_text_column == nullptr)
         return;
-    m_height = 0.f;
+    m_current_height = 0.f;
     auto width_it = m_widths.begin();
     float line_y_pos = 0.f;
     for (auto& pair : m_text_column->getParagraph()) {
@@ -175,34 +177,46 @@ void WrapAlgorithm::recalculate() {
         m_width = *width_it;
         m_current_string = &line.chars;
         m_x_offset = 0.f;
-        algorithm();
 
-        float height = 0.f;
-        for (auto& subline : m_sublines) {
-            pair.second.sublines.push_back(subline);
-            height += subline.height;
+        if (line.chars.size() > 0) {
+            algorithm();
+            float height = 0.f;
+            for (auto& subline : m_sublines) {
+                pair.second.sublines.push_back(subline);
+                height += subline.height;
+            }
+            line.height = height;
+            line_y_pos += height;
+            auto next = std::next(width_it);
+            if (next != m_widths.end())
+                width_it = next;
         }
-        pair.second.height = height;
-        line_y_pos += height;
-        auto next = std::next(width_it);
-        if (next != m_widths.end())
-            width_it = next;
+        else {
+            line.height = m_default_empty_line_height;
+            m_current_height += m_default_empty_line_height;
+            line_y_pos += m_default_empty_line_height;
+        }
     }
+    m_current_height = line_y_pos;
 }
 void WrapAlgorithm::recalculate(WrapLine* line, float x_offset) {
-    m_height = 0.f;
+    m_current_height = 0.f;
     m_current_string = &line->chars;
     m_x_offset = x_offset;
     m_width = m_widths.front();
     algorithm();
     if (line->chars.size() > 0) {
         auto last_char = line->chars.back();
-        line->width = last_char->calculated_position.x + last_char->info->advance - x_offset;
     }
     for (auto& subline : m_sublines) {
         line->sublines.push_back(subline);
     }
-    line->height = m_height;
+    line->height = m_current_height;
+}
+void WrapAlgorithm::setDefaultEmptyLineHeight(float height, bool redo) {
+    m_default_empty_line_height = height;
+    if (redo)
+        recalculate();
 }
 void WrapAlgorithm::setTextColumn(WrapColumn* paragraph, bool redo) {
     m_text_column = paragraph;

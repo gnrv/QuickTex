@@ -28,7 +28,7 @@ struct LatexEditorConfig {
     Colors::color selection_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
     Colors::color charbox_color = Colors::white;
     Colors::color error_color = Colors::red;
-    bool debug = false;
+    bool debug = true;
 };
 
 class LatexEditor {
@@ -57,6 +57,11 @@ private:
     size_t m_cursor_last_hpos = 0;
     ImVec2 m_cursor_drawpos;
     float m_cursor_height;
+    bool m_start_dragging = false;
+
+    // Calculated quantities
+    float m_total_height = 0.f;
+    float m_total_width = 0.f;
 
     // Editor configurations
     LatexEditorConfig m_config;
@@ -116,7 +121,7 @@ private:
     bool is_in_bracket();
     bool is_in_matrix();
 
-    ImVec2 find_char_placement(size_t pos, bool half_line_space = false);
+    ImVec2 locate_char_coord(size_t pos, bool half_line_space = false);
     void set_std_char_info();
     void draw_cursor();
     void char_decoration();

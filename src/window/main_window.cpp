@@ -67,11 +67,11 @@ void MainApp::InitializationBeforeLoop() {
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
 
-    m_txt = "\\begin{align}\n"
-        "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
-        "       &=(x+y)(x^2+2xy+y^2)\\\\\n"
-        "       &=x^3+3x^2y+3xy^3+x^3.\n"
-        "\\end{align}";
+    // m_txt = "\\begin{align}\n"
+    //     "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
+    //     "       &=(x+y)(x^2+2xy+y^2)\\\\\n"
+    //     "       &=x^3+3x^2y+3xy^3+x^3.\n"
+    //     "\\end{align}";
 }
 void MainApp::AfterLoop() {
 }
@@ -237,6 +237,8 @@ void MainApp::result_window(float width) {
         if (m_latex_image->getLatexErrorMsg().empty()) {
             auto texture = m_latex_image->getImage()->texture();
             auto cursor_pos = ImGui::GetCursorScreenPos();
+            cursor_pos.x += 5;
+            cursor_pos.y += 5;
             auto draw_list = ImGui::GetWindowDrawList();
             draw_list->AddImage(
                 m_latex_image->getImage()->texture(),
