@@ -96,6 +96,7 @@ void LatexEditor::parse() {
     }
     WrapAlgorithm wrapper;
     wrapper.setWidth(5000000, false);
+    wrapper.setLineSpace(m_line_space, false);
     wrapper.setTextColumn(&m_wrap_column);
 }
 
@@ -217,20 +218,21 @@ size_t LatexEditor::find_previous_word(size_t pos) {
     pos++;
     return pos;
 }
-void LatexEditor::set_line_height() {
-    if (!m_is_line_height_set) {
+void LatexEditor::set_std_char_info() {
+    if (!m_is_char_info_set) {
         WrapColumn col;
         std::string test_string = "abc|&g";
         auto& ui_state = UIState::getInstance();
         Style style;
-        m_is_line_height_set |= Utf8StrToImCharStr(ui_state, &col, test_string, 0, 0, 2, style, false);
-        if (m_is_line_height_set) {
+        m_is_char_info_set |= Utf8StrToImCharStr(ui_state, &col, test_string, 0, 0, 2, style, false);
+        if (m_is_char_info_set) {
             WrapAlgorithm wrapper;
             wrapper.setWidth(5000000, false);
             wrapper.setLineSpace(m_line_space, false);
             wrapper.setTextColumn(&col);
             auto& subline = col[0].sublines.front();
             m_line_height = subline.max_ascent + subline.max_descent;
+            m_advance = col[0].chars.front()->info->advance;
         }
     }
 }
@@ -309,8 +311,50 @@ void LatexEditor::draw_cursor() {
     ImVec2 pos = ImGui::GetCursorScreenPos() + m_cursor_drawpos;
     pos.x -= 1.f;
     ImVec2 end_pos = pos;
-    end_pos.y += m_line_height;
+    end_pos.y += m_line_height * m_line_space;
     m_draw_list->AddLine(pos, end_pos, Colors::lightgray, 1.f);
+}
+void LatexEditor::draw_decoration(ImVec2 char_p1, ImVec2 char_p2, const CharDecoInfo& decoration) {
+    if (decoration.type == CharDecoInfo::BACKGROUND)
+        m_draw_list->AddRectFilled(char_p1, char_p2, decoration.color);
+    if (decoration.type == CharDecoInfo::UNDERLINE) {
+        char_p1.y = char_p2.y;
+        m_draw_list->AddLine(char_p1, char_p2, decoration.color, decoration.thickness);
+    }
+}
+void LatexEditor::char_decoration(size_t from, size_t to, const std::vector<CharDecoInfo>& decorations) {
+    ImVec2 highlight_from;
+    ImVec2 highlight_to;
+    bool start_selection = false;
+    auto screen_pos = ImGui::GetCursorScreenPos();
+    for (size_t i = from; i < to;i++) {
+        if (!start_selection) {
+            start_selection = true;
+            highlight_from = find_char_placement(i, true);
+        }
+        if (m_text[i] == '\n') {
+            start_selection = false;
+            highlight_to = find_char_placement(i, true);
+            highlight_to.y += m_line_height * m_line_space;
+            highlight_from += screen_pos;
+            highlight_to += screen_pos;
+            // Indicate to the user that he selected a \n
+            highlight_to.x += m_advance / 3.f;
+            for (const auto& deco : decorations) {
+                draw_decoration(highlight_from, highlight_to, deco);
+            }
+        }
+    }
+    if (start_selection) {
+        highlight_to = find_char_placement(to, true);
+        highlight_to.y += m_line_height * m_line_space;
+        highlight_from += screen_pos;
+        highlight_to += screen_pos;
+        for (const auto& deco : decorations) {
+            draw_decoration(highlight_from, highlight_to, deco);
+        }
+        m_draw_list->AddRectFilled(highlight_from, highlight_to, ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f)));
+    }
 }
 void LatexEditor::char_decoration() {
     size_t min_sel = std::min(m_cursor_pos, m_cursor_selection_begin);
@@ -332,6 +376,8 @@ void LatexEditor::char_decoration() {
             highlight_to.y += m_line_height * m_line_space;
             highlight_from += screen_pos;
             highlight_to += screen_pos;
+            // Indicate to the user that he selected a \n
+            highlight_to.x += m_advance / 3.f;
             m_draw_list->AddRectFilled(highlight_from, highlight_to, ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f)));
         }
     }
@@ -346,7 +392,7 @@ void LatexEditor::char_decoration() {
 
 void LatexEditor::draw(std::string& latex, ImVec2 size) {
     // formula.
-    set_line_height();
+    set_std_char_info();
     keyboard_events();
 
     ImGui::Text("Linenum: %d, cursor_pos: %d", m_cursor_line_number, m_cursor_pos);

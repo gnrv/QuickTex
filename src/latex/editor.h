@@ -10,6 +10,13 @@
 #include "chars/im_char.h"
 #include "window/draw_commands.h"
 
+struct CharDecoInfo {
+    enum Decoration { BACKGROUND, UNDERLINE, BOX, SQUIGLY };
+    Decoration type;
+    Colors::color color;
+    float thickness = 1.f;
+};
+
 class LatexEditor {
 private:
     std::string m_text;
@@ -26,7 +33,8 @@ private:
 
     // Cursor related things
     float m_line_height = 15.f;
-    bool m_is_line_height_set = false;
+    float m_advance = 10.f;
+    bool m_is_char_info_set = false;
     bool m_cursor_find_pos = true;
     size_t m_cursor_pos = 0;
     size_t m_cursor_selection_begin = 0;
@@ -50,7 +58,7 @@ private:
     void move_down(bool shift);
     void move_left(bool word = false, bool shift = false);
     void move_right(bool word = false, bool shift = false);
-    void set_line_height();
+    void set_std_char_info();
 
     /**
      * @brief Modifies pos to next word
@@ -77,6 +85,8 @@ private:
 
     void draw_cursor();
     void char_decoration();
+    void draw_decoration(ImVec2 char_p1, ImVec2 char_p2, const CharDecoInfo& decoration);
+    void char_decoration(size_t from, size_t to, const std::vector<CharDecoInfo>& decorations);
 
     void keyboard_events();
 
