@@ -18,6 +18,9 @@ bool is_alphanum(char c) {
 bool is_whitespace(char c) {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
+bool is_special_char(char c) {
+    return !is_alphanum(c) && !is_whitespace(c);
+}
 
 size_t LatexEditor::find_line_begin(size_t pos) {
     while (pos > 0 && m_text[pos - 1] != '\n')
@@ -111,11 +114,10 @@ void LatexEditor::events(const Rect& boundaries) {
         else if (to_press & K_BACKSPACE) {
             if (m_cursor_pos != m_cursor_selection_begin) {
                 delete_at(m_cursor_selection_begin, m_cursor_pos, false);
-
             }
             else if (m_cursor_pos > 0) {
                 if (ctrl_or_cmd)
-                    delete_at(find_previous_word(m_cursor_pos), m_cursor_pos, false);
+                    delete_at(find_previous_word(m_cursor_pos), m_cursor_pos, false, FORCE);
                 else
                     delete_at(m_cursor_pos - 1, m_cursor_pos, false);
             }
@@ -126,7 +128,7 @@ void LatexEditor::events(const Rect& boundaries) {
             }
             else if (m_cursor_pos < m_text.size()) {
                 if (ctrl_or_cmd)
-                    delete_at(m_cursor_pos, find_next_word(m_cursor_pos), false);
+                    delete_at(m_cursor_pos, find_next_word(m_cursor_pos), false, FORCE);
                 else
                     delete_at(m_cursor_pos, m_cursor_pos + 1, false);
             }
@@ -147,7 +149,7 @@ void LatexEditor::events(const Rect& boundaries) {
             // Consume characters
             io.InputQueueCharacters.resize(0);
         }
-        // Todo: proper shortcuts, with cmd or ctrl
+        // Todo: use Tempo shortcut api
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_A)) {
             m_cursor_selection_begin = 0;
             m_cursor_pos = m_text.size();
@@ -169,9 +171,26 @@ void LatexEditor::events(const Rect& boundaries) {
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_X)) {
             ImGui::SetClipboardText(m_text.substr(m_cursor_selection_begin, m_cursor_pos - m_cursor_selection_begin).c_str());
-            delete_at(m_cursor_selection_begin, m_cursor_pos, false);
+            delete_at(m_cursor_selection_begin, m_cursor_pos, false, FORCE);
+        }
+        else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_Y)
+            || ctrl_or_cmd && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+            if (m_history_idx < m_history.size() - 1) {
+                m_history_idx++;
+                set_text(m_history[m_history_idx].text);
+                m_cursor_pos = m_history[m_history_idx].cursor_pos;
+                m_cursor_selection_begin = m_cursor_pos;
+                m_cursor_find_pos = true;
+            }
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+            if (m_history_idx > 0) {
+                m_history_idx--;
+                set_text(m_history[m_history_idx].text);
+                m_cursor_pos = m_history[m_history_idx].cursor_pos;
+                m_cursor_selection_begin = m_cursor_pos;
+                m_cursor_find_pos = true;
+            }
         }
     }
 
@@ -210,33 +229,51 @@ void LatexEditor::events(const Rect& boundaries) {
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
-    // else if (Imgui::IsKeyPressed(ImGuiKey_Delete)) {
-    //     if (ImGui::GetIO().KeyCtrl)
-    //         delete_at(m_cursor_pos, find_next_word(m_cursor_pos));
-    //     else
-    //         delete_at(m_cursor_pos, m_cursor_pos + 1);
-    // }
-    // else if (ImGui::IsKeyPressed())
-    //     m_key_presses = current_key_presses;
-    // }
-    // else {
-    //     m_key_presses = 0;
-    // }
 }
 
 
 /* ===============================
  *            Parsing
  * =============================== */
+void LatexEditor::make_history(HistoryAction action, const std::string& text_cpy, size_t cursor_pos, size_t change_size, char start_char) {
+    HistoryPoint::InsertType insert_type = HistoryPoint::InsertType::NONE;
+    if (is_alphanum(start_char))
+        insert_type = HistoryPoint::InsertType::ALPHANUM;
+    else if (is_whitespace(start_char))
+        insert_type = HistoryPoint::InsertType::WHITESPACE;
+    else if (is_special_char(start_char))
+        insert_type = HistoryPoint::InsertType::SPECIAL;
+
+    if (change_size > 1 || action == FORCE) {
+        insert_type = HistoryPoint::InsertType::NONE;
+    }
+
+    if (m_history.size() > 0 && insert_type == m_history.back().insert_type && insert_type != HistoryPoint::InsertType::NONE) {
+        m_history.erase(m_history.begin() + m_history_idx, m_history.end());
+    }
+    if (action != NONE) {
+        m_history.push_back({ text_cpy,cursor_pos, insert_type });
+        m_history_idx = m_history.size() - 1;
+    }
+}
 void LatexEditor::insert_with_selection(const std::string& str) {
+    bool was_selection = false;
     if (m_cursor_selection_begin != m_cursor_pos) {
-        delete_at(m_cursor_selection_begin, m_cursor_pos, true);
+        was_selection = true;
+        delete_at(m_cursor_selection_begin, m_cursor_pos, true, NONE);
         if (m_cursor_pos > m_cursor_selection_begin)
             m_cursor_pos = m_cursor_selection_begin;
     }
-    insert_at(m_cursor_pos, str, false);
+    if (was_selection)
+        insert_at(m_cursor_pos, str, false, FORCE);
+    else
+        insert_at(m_cursor_pos, str, false, GUESS);
 }
-void LatexEditor::insert_at(size_t pos, const std::string& str, bool skip_cursor_move) {
+void LatexEditor::insert_at(size_t pos, const std::string& str, bool skip_cursor_move, HistoryAction action) {
+    char current_char = m_text[pos];
+    if (pos > 0)
+        current_char = m_text[pos - 1];
+
     m_text.insert(pos, str);
     m_has_text_changed = true;
     if (!skip_cursor_move) {
@@ -247,10 +284,14 @@ void LatexEditor::insert_at(size_t pos, const std::string& str, bool skip_cursor
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
+    make_history(action, m_text, m_cursor_pos, str.size(), str[0]);
 }
-void LatexEditor::delete_at(size_t from, size_t to, bool skip_cursor_move) {
+void LatexEditor::delete_at(size_t from, size_t to, bool skip_cursor_move, HistoryAction action) {
     if (from > to)
         std::swap(from, to);
+    char start_char = m_text[from];
+    char end_char = m_text[to];
+
     m_text.erase(from, to - from);
     m_has_text_changed = true;
     if (!skip_cursor_move) {
@@ -261,6 +302,7 @@ void LatexEditor::delete_at(size_t from, size_t to, bool skip_cursor_move) {
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
     }
+    make_history(action, m_text, m_cursor_pos, to - from, start_char);
 }
 void LatexEditor::parse() {
     m_reparse = false;
@@ -679,6 +721,12 @@ void LatexEditor::debug_window() {
         ImGui::Text("Is focused: %d", m_is_focused);
         ImGui::Text("Text size: %d", m_text.size());
         ImGui::Text("Width %f height %f", m_total_width, m_total_height);
+        if (ImGui::TreeNode("History")) {
+            for (auto it = m_history.rbegin();it != m_history.rend();it++) {
+                ImGui::BulletText("%s", it->text.c_str());
+            }
+            ImGui::TreePop();
+        }
         ImGui::End();
     }
 }

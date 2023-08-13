@@ -31,6 +31,13 @@ struct LatexEditorConfig {
     bool debug = true;
 };
 
+struct HistoryPoint {
+    enum InsertType { ALPHANUM, WHITESPACE, SPECIAL, NONE };
+    std::string text;
+    size_t cursor_pos;
+    InsertType insert_type = NONE;
+};
+
 class LatexEditor {
 private:
     std::string m_text;
@@ -65,6 +72,10 @@ private:
 
     // Editor configurations
     LatexEditorConfig m_config;
+
+    // History
+    std::vector<HistoryPoint> m_history = { { "", 0 } };
+    int m_history_idx = 0;
 
     // Events
     const int K_LEFT = 0x1;
@@ -134,9 +145,11 @@ private:
     void double_click(const ImVec2& position);
     void triple_click(const ImVec2& position);
 
+    enum HistoryAction { FORCE, GUESS, NONE };
+    void make_history(HistoryAction action, const std::string& text_cpy, size_t cursor_pos, size_t change_size, char start_char);
     void insert_with_selection(const std::string& str);
-    void insert_at(size_t pos, const std::string& str, bool skip_cursor_move);
-    void delete_at(size_t from, size_t to, bool skip_cursor_move);
+    void insert_at(size_t pos, const std::string& str, bool skip_cursor_move, HistoryAction action = HistoryAction::GUESS);
+    void delete_at(size_t from, size_t to, bool skip_cursor_move, HistoryAction action = HistoryAction::GUESS);
     void parse();
 
     void debug_window();
