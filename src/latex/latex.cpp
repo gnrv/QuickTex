@@ -12,17 +12,17 @@ namespace Latex {
             // const FontSrcFile math_regular("data/lm-math/latinmodern-math.clm2", "data/lm-math/latinmodern-math.otf");
             // MicroTeX::init(math_regular);
             const FontSrcFile math_regular("data/xits/XITSMath-Regular.clm2", "data/xits/XITSMath-Regular.otf");
-            // const FontSrcFile math_bold("data/xits/XITSMath-Bold.clm2", "data/xits/XITSMath-Bold.otf");
+            const FontSrcFile math_bold("data/xits/XITSMath-Bold.clm2", "data/xits/XITSMath-Bold.otf");
             const FontSrcFile xits_boldItalic("data/xits/XITS-BoldItalic.clm2", "data/xits/XITS-BoldItalic.otf");
             const FontSrcFile xits_regular("data/xits/XITS-Regular.clm2", "data/xits/XITS-Regular.otf");
             const FontSrcFile xits_bold("data/xits/XITS-Bold.clm2", "data/xits/XITS-Bold.otf");
-            const FontSrcFile xits_talic("data/xits/XITS-Italic.clm2", "data/xits/XITS-Italic.otf");
+            const FontSrcFile xits_italic("data/xits/XITS-Italic.clm2", "data/xits/XITS-Italic.otf");
             MicroTeX::init(math_regular);
             // MicroTeX::addFont(math_bold);
             MicroTeX::addFont(xits_boldItalic);
             MicroTeX::addFont(xits_regular);
             MicroTeX::addFont(xits_bold);
-            MicroTeX::addFont(xits_talic);
+            MicroTeX::addFont(xits_italic);
             MicroTeX::setDefaultMainFont("XITS");
 
 

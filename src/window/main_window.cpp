@@ -64,8 +64,17 @@ void MainApp::InitializationBeforeLoop() {
         m_save_to_file = true;
         };
 
+    Tempo::Shortcut bookmarks;
+    bookmarks.keys = { CMD_KEY, GLFW_KEY_H };
+    bookmarks.name = "History";
+    bookmarks.description = "Shows the history";
+    bookmarks.callback = [this]() {
+        m_history.show();
+        };
+
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
+    Tempo::KeyboardShortCut::addShortcut(bookmarks);
 
     // m_txt = "\\begin{align}\n"
     //     "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
@@ -93,7 +102,6 @@ float MainApp::check_time() {
 void MainApp::set_clipboard() {
     if (m_latex_image == nullptr || m_latex_image->getImage() == nullptr || m_latex_image->getImage()->width() == 0 || m_latex_image->getImage()->height() == 0)
         return;
-
     m_has_pasted = true;
     auto image = m_latex_image->getImage();
     clip::image_spec spec;
@@ -111,6 +119,8 @@ void MainApp::set_clipboard() {
     spec.alpha_shift = 24;
     clip::image img(image->getData()->data(), spec);
     clip::set_image(img);
+
+    m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" , m_inline, m_font_size });
 }
 void MainApp::save_to_file() {
     if (m_save_to_file) {
@@ -130,6 +140,7 @@ void MainApp::save_to_file() {
         auto image = m_latex_image->getImage();
         stbi_write_png(filename.c_str(), image->width(), image->height(), 4, image->getData()->data(), image->width() * 4);
         m_just_saved_to_file = true;
+        m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" , m_inline, m_font_size });
     }
 }
 void MainApp::options() {
@@ -189,17 +200,16 @@ void MainApp::input_field(float width, float height) {
                     ImGui::Text("Copied to clipboard");
             }
             else {
-                ImGui::Text("Press %s + S to copy to clipboard (or %s + Shift + S to save to file)", Tempo::getKeyName(CMD_KEY).c_str(), Tempo::getKeyName(CMD_KEY).c_str());
+                std::string cmd_name = Tempo::getKeyName(CMD_KEY);
+                ImGui::Text("%s + S: copy to clipboard / %s + Shift + S: save to file / %s + H: History", cmd_name.c_str(), cmd_name.c_str(), cmd_name.c_str());
             }
         }
     }
 }
 
+
 void MainApp::generate_image() {
     // Generating tex image
-    if (m_prev_text != m_txt) {
-        m_latex_editor.set_text(m_txt);
-    }
     if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size || m_inline != m_prev_inline) {
         m_prev_text = m_txt;
         m_prev_font_size = m_font_size;
@@ -275,6 +285,17 @@ void MainApp::FrameUpdate() {
 
     save_to_file();
 
+    m_history.draw();
+    if (m_history.is_open())
+        m_latex_editor.set_focus(false);
+    LatexHistory hist;
+    if (m_history.must_retrieve_latex(hist)) {
+        m_latex_editor.set_text(hist.latex);
+        m_txt = hist.latex;
+        m_font_size = hist.size;
+        m_inline = hist.is_inline;
+        m_prev_text = "";
+    }
 }
 
 void MainApp::BeforeFrameUpdate() {

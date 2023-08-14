@@ -1,0 +1,104 @@
+
+commands = [
+    # Delimiters
+    { str = "\\left(\\right)", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\left[\\right]", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\left\\{\\right\\}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\left|\\right|", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\left\\langle\\right\\rangle", indices = [
+        11,
+    ], frequency = 0 },
+    { str = "\\left\\lfloor\\right\\rfloor", indices = [
+        11,
+    ], frequency = 0 },
+    { str = "\\left\\lceil\\right\\rceil", indices = [
+        11,
+    ], frequency = 0 },
+    { str = "\\left\\vert\\right\\vert", indices = [
+        11,
+    ], frequency = 0 },
+    { str = "\\left\\Vert\\right\\Vert", indices = [
+        11,
+    ], frequency = 0 },
+    # Matrices and alignement
+    { str = "\\begin{array}\n  \n\\end{array}", indices = [
+        16,
+    ], frequency = 0 },
+    { str = "\\begin{pmatrix}\n  \n\\end{pmatrix}", indices = [
+        18,
+    ], frequency = 0 },
+    { str = "\\begin{bmatrix}\n  \n\\end{bmatrix}", indices = [
+        18,
+    ], frequency = 0 },
+    { str = "\\begin{vmatrix}\n  \n\\end{vmatrix}", indices = [
+        18,
+    ], frequency = 0 },
+    { str = "\\begin{Vmatrix}\n  \n\\end{Vmatrix}", indices = [
+        18,
+    ], frequency = 0 },
+    { str = "\\begin{cases}\n  \n\\end{cases}", indices = [
+        16,
+    ], frequency = 0 },
+    { str = "\\begin{align}\n  \n\\end{align}", indices = [
+        16,
+    ], frequency = 0 },
+    # Common math functions
+    { str = "\\int_{}^{}", indices = [
+        6,
+        9,
+    ], frequency = 0 },
+    { str = "\\lim_{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\sum_{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\sum_{}^{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\frac{}{}", indices = [
+        6,
+        8,
+    ], frequency = 0 },
+    { str = "\\frac{\\partial }{\\partial }", indices = [
+        15,
+        26,
+    ], frequency = 0 },
+    { str = "\\sqrt{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\sqrt[]{}", indices = [
+        8,
+        10,
+    ], frequency = 0 },
+    # Text style
+    { str = "\\textrm{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\textbf{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\textit{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\textrm{}", indices = [
+        8,
+    ], frequency = 0 },
+    # Over/under brace
+    { str = "\\overbrace{}^{}", indices = [
+        11,
+        14,
+    ], frequency = 0 },
+    { str = "\\underbrace{}_{}", indices = [
+        11,
+        14,
+    ], frequency = 0 },
+]

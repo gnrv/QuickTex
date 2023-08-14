@@ -28,7 +28,7 @@ struct LatexEditorConfig {
     Colors::color selection_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
     Colors::color charbox_color = Colors::white;
     Colors::color error_color = Colors::red;
-    bool debug = true;
+    bool debug = false;
 };
 
 struct HistoryPoint {
@@ -43,7 +43,7 @@ private:
     std::string m_text;
     bool m_suggset = false;
     bool m_reparse = false;
-    bool m_is_focused = false;
+    bool m_is_focused = true;
 
     float m_line_space = 1.2f;
 
@@ -159,4 +159,5 @@ public:
     void set_text(const std::string& text);
     std::string get_text();
     bool has_text_changed();
+    void set_focus(bool focus) { m_is_focused = focus; }
 };

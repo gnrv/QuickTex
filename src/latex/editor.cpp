@@ -379,6 +379,11 @@ void LatexEditor::parse() {
 void LatexEditor::set_text(const std::string& text) {
     m_text = text;
     parse();
+    m_cursor_pos = m_text.size() - 1;
+    m_cursor_selection_begin = m_cursor_pos;
+    m_cursor_line_number = find_line_number(m_cursor_pos);
+    m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
+    m_cursor_find_pos = true;
 }
 
 /* ===============================

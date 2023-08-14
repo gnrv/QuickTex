@@ -10,6 +10,7 @@
 
 #include "state.h"
 #include "latex/editor.h"
+#include "latex/history.h"
 
 // Drawable and widgets
 int TextInputCallback(ImGuiInputTextCallbackData* data);
@@ -34,6 +35,8 @@ private:
     bool m_has_pasted = true;
     bool m_save_to_file = false;
     bool m_just_saved_to_file = false;
+
+    History m_history;
 
     LatexEditor m_latex_editor;
 
