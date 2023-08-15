@@ -40,9 +40,12 @@ private:
 
     LatexEditor m_latex_editor;
 
+    std::string m_err;
     std::unique_ptr<Latex::LatexImage> m_latex_image = nullptr;
 
     float check_time();
+
+    bool is_valid();
 
     void options();
     void input_field(float width, float height);
@@ -51,7 +54,7 @@ private:
     void set_clipboard();
     void save_to_file();
 public:
-    MainApp();
+    MainApp(const std::string& err);
     virtual ~MainApp() {}
 
     void InitializationBeforeLoop() override;

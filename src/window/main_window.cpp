@@ -41,8 +41,8 @@ void setFonts() {
         "data/fonts/material-design-icons/MaterialIcons-Regular.ttf", icons_ranges
     );
 }
-MainApp::MainApp() {
-
+MainApp::MainApp(const std::string& err) {
+    m_err = err;
 }
 void MainApp::InitializationBeforeLoop() {
     setFonts();
@@ -98,9 +98,12 @@ float MainApp::check_time() {
     auto t1 = std::chrono::duration_cast<std::chrono::milliseconds>(t - m_last_checkpoint).count();
     return (float)t1 / time_until_clipboard;
 }
+bool MainApp::is_valid() {
+    return m_err.empty() && m_latex_image == nullptr && m_latex_image->getImage() == nullptr && m_latex_image->getImage()->width() == 0 && m_latex_image->getImage()->height() == 0;
+}
 
 void MainApp::set_clipboard() {
-    if (m_latex_image == nullptr || m_latex_image->getImage() == nullptr || m_latex_image->getImage()->width() == 0 || m_latex_image->getImage()->height() == 0)
+    if (!is_valid())
         return;
     m_has_pasted = true;
     auto image = m_latex_image->getImage();
@@ -125,6 +128,9 @@ void MainApp::set_clipboard() {
 void MainApp::save_to_file() {
     if (m_save_to_file) {
         m_save_to_file = false;
+
+        if (!is_valid())
+            return;
 
         NFD_Init();
         std::string filename;
@@ -210,6 +216,8 @@ void MainApp::input_field(float width, float height) {
 
 void MainApp::generate_image() {
     // Generating tex image
+    if (!m_err.empty())
+        return;
     if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size || m_inline != m_prev_inline) {
         m_prev_text = m_txt;
         m_prev_font_size = m_font_size;
@@ -244,7 +252,7 @@ void MainApp::result_window(float width) {
         avail.y = m_latex_image->getDimensions().y;
     ImGui::BeginChild("##output", ImVec2(width - 10, avail.y));
     if (m_latex_image != nullptr) {
-        if (m_latex_image->getLatexErrorMsg().empty()) {
+        if (m_latex_image->getLatexErrorMsg().empty() && m_err.empty()) {
             auto texture = m_latex_image->getImage()->texture();
             auto cursor_pos = ImGui::GetCursorScreenPos();
             cursor_pos.x += 5;
@@ -261,6 +269,12 @@ void MainApp::result_window(float width) {
             ImGui::Text(m_latex_image->getLatexErrorMsg().c_str());
             ImGui::PopStyleColor();
         }
+    }
+
+    if (!m_err.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
+        ImGui::Text(m_err.c_str());
+        ImGui::PopStyleColor();
     }
     ImGui::EndChild();
     ImGui::PopStyleColor();

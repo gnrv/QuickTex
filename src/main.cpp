@@ -16,7 +16,6 @@ using namespace std::chrono;
 
 int main() {
     std::string err = Latex::init();
-    std::cout << err << std::endl;
     Tempo::Config config;
     config.app_name = "QuickTex";
     config.app_title = "QuickTex - Quickly create math equations";
@@ -26,7 +25,7 @@ int main() {
     config.default_window_height = 600;
 
 
-    MainApp* app = new MainApp();
+    MainApp* app = new MainApp(err);
     Tempo::Run(app, config);
 
     return 0;

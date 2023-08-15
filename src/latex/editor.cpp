@@ -618,11 +618,12 @@ void LatexEditor::draw_cursor() {
         return;
 
     if (m_cursor_find_pos) {
-        m_cursor_find_pos = false;
         if (m_wrap_column.find(m_cursor_line_number) != m_wrap_column.end()) {
+            m_cursor_find_pos = false;
             m_cursor_drawpos = locate_char_coord(m_cursor_pos, true);
         }
-        else {
+        else if (m_text.empty()) {
+            m_cursor_find_pos = false;
             m_cursor_drawpos = ImVec2(0, 0);
         }
     }
@@ -737,7 +738,6 @@ void LatexEditor::debug_window() {
 }
 
 void LatexEditor::draw(std::string& latex, ImVec2 size) {
-    // formula.
     set_std_char_info();
     debug_window();
 
@@ -748,13 +748,15 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
     if (size.x == 0) {
         size.x = ImGui::GetContentRegionAvail().x;
     }
+    auto pos = ImGui::GetCursorScreenPos();
     ImGui::BeginChild("latex_editor", size, true, ImGuiWindowFlags_HorizontalScrollbar);
     if (m_reparse) {
         parse();
     }
+    // TODO: fix boundaries
     Rect boundaries;
-    boundaries.x = ImGui::GetCursorScreenPos().x;
-    boundaries.y = ImGui::GetCursorScreenPos().y;
+    boundaries.x = pos.x;
+    boundaries.y = pos.y;
     boundaries.w = ImGui::GetContentRegionAvail().x;
     boundaries.h = ImGui::GetContentRegionAvail().y;
     events(boundaries);
