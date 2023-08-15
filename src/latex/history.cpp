@@ -3,6 +3,7 @@
 #include <chrono>
 #include <toml.hpp>
 #include "core/colors.h"
+#include "IconsMaterialDesign.h"
 
 void History::save_to_file() {
     std::fstream fs("data/history.toml", std::ios::in | std::ios::out | std::ios::trunc);
@@ -11,14 +12,8 @@ void History::save_to_file() {
     for (auto& pair : m_history) {
         file["history"][std::to_string(pair.first)] = {
             {"latex", pair.second.latex},
-            {"aspect_ratio", pair.second.aspect_ratio}
-        };
-    }
-    for (auto& pair : m_bookmarks) {
-        file["bookmarks"][std::to_string(pair.first)] = {
-            {"latex", pair.second.latex},
             {"aspect_ratio", pair.second.aspect_ratio},
-            {"bookmark_name", pair.second.bookmark_name}
+            {"name", pair.second.name}
         };
     }
     std::ofstream("data/history.toml") << file;
@@ -28,6 +23,13 @@ void History::load() {
     if (m_is_loaded)
         return;
     m_is_loaded = true;
+
+    m_bookmarks.clear();
+    m_history.clear();
+    m_history_images.clear();
+    m_to_erase.clear();
+    m_equations.clear();
+
     std::fstream fs("data/history.toml", std::ios::in);
     if (!fs.is_open()) {
         std::fstream out("data/history.toml", std::ios::out | std::ios::trunc);
@@ -40,35 +42,31 @@ void History::load() {
         history_point.latex = toml::find_or<std::string>(value, "latex", "");
         history_point.aspect_ratio = toml::find_or<float>(value, "aspect_ratio", 1.f);
         history_point.timepoint = std::stoull(pair.first);
-        history_point.is_inline = toml::find_or<bool>(value, "is_inline", false);
-        m_history[std::stoull(pair.first)] = history_point;
-    }
 
-    auto bookmarks = toml::find_or<toml::table>(file, "bookmarks", toml::table());
-    for (auto& pair : bookmarks) {
-        auto& value = pair.second;
-        LatexHistory bookmark;
-        bookmark.latex = toml::find_or<std::string>(value, "latex", "");
-        bookmark.aspect_ratio = toml::find_or<float>(value, "aspect_ratio", 1.f);
-        bookmark.bookmark_name = toml::find_or<std::string>(value, "bookmark_name", "");
-        bookmark.timepoint = std::stoull(pair.first);
-        bookmark.is_inline = toml::find_or<bool>(value, "is_inline", false);
-        m_bookmarks[std::stoull(pair.first)] = bookmark;
+        std::string bookmark_name = toml::find_or<std::string>(value, "name", "");
+        m_history[std::stoull(pair.first)] = history_point;
+        m_equations.insert(history_point.latex);
+        if (!bookmark_name.empty())
+            m_bookmarks.insert(std::stoull(pair.first));
     }
 }
 
 void History::saveToHistory(LatexHistory history_point) {
     load();
+    if (m_equations.find(history_point.latex) != m_equations.end())
+        return;
     uint64_t timepoint = std::chrono::system_clock::now().time_since_epoch().count();
     history_point.timepoint = timepoint;
     m_history[timepoint] = history_point;
+    m_equations.insert(history_point.latex);
     save_to_file();
 }
-void History::saveBookmark(LatexHistory bookmark) {
+void History::saveBookmark(uint64_t timepoint, const std::string& name) {
     load();
-    uint64_t timepoint = std::chrono::system_clock::now().time_since_epoch().count();
-    bookmark.timepoint = timepoint;
-    m_bookmarks[timepoint] = bookmark;
+    if (m_history.find(timepoint) != m_history.end()) {
+        m_bookmarks.insert(timepoint);
+        m_history[timepoint].name = name;
+    }
     save_to_file();
 }
 
@@ -83,8 +81,8 @@ std::vector<LatexHistory> History::getHistory() {
 std::vector<LatexHistory> History::getBookmarks() {
     load();
     std::vector<LatexHistory> out;
-    for (auto it = m_bookmarks.rbegin(); it != m_bookmarks.rend(); ++it) {
-        out.push_back(it->second);
+    for (auto timepoint : m_bookmarks) {
+        out.push_back(m_history[timepoint]);
     }
     return out;
 }
@@ -103,6 +101,10 @@ bool History::must_retrieve_latex(LatexHistory& history_point) {
         return false;
     if (m_history.find(m_to_retrieve) != m_history.end()) {
         history_point = m_history[m_to_retrieve];
+        m_history.erase(m_to_retrieve);
+        uint64_t timepoint = std::chrono::system_clock::now().time_since_epoch().count();
+        m_history[timepoint] = history_point;
+        save_to_file();
         m_to_retrieve = 0;
         return true;
     }
@@ -145,6 +147,7 @@ void History::draw() {
     if (m_open)
         ImGui::OpenPopup("History");
     load();
+    ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
     if (ImGui::BeginPopupModal("History", &m_open)) {
         Rect boundaries;
         boundaries.x = ImGui::GetWindowPos().x;

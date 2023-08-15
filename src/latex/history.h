@@ -10,16 +10,15 @@
 struct LatexHistory {
     std::string latex;
     float aspect_ratio;
-    std::string bookmark_name;
-    bool is_inline;
-    int size = 50;
+    std::string name;
     uint64_t timepoint = 0;
 };
 class History {
 private:
-    std::map<uint64_t, LatexHistory> m_bookmarks;
+    std::set<uint64_t> m_bookmarks;
     std::set<uint64_t> m_to_erase;
     std::map<uint64_t, LatexHistory> m_history;
+    std::set<std::string> m_equations;
 
     uint64_t m_to_retrieve = 0;
 
@@ -35,7 +34,7 @@ private:
     void show_history_point(const LatexHistory& history_point, const Rect& boundaries);
 public:
     void saveToHistory(LatexHistory history_point);
-    void saveBookmark(LatexHistory history_point);
+    void saveBookmark(uint64_t timepoint, const std::string& name);
 
     std::vector<LatexHistory> getHistory();
     std::vector<LatexHistory> getBookmarks();
