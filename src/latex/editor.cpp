@@ -342,7 +342,7 @@ void LatexEditor::parse() {
             i++;
             while (i < m_text.size() && is_alpha(m_text[i]))
                 i++;
-            if (i < m_text.size() - 1 && m_text[i + 1] == '\\')
+            if (i < m_text.size() - 1 && m_text[i] == '\\')
                 i++;
 
             style.font_color = m_config.command_color;
