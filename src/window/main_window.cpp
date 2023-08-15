@@ -117,7 +117,7 @@ void MainApp::set_clipboard() {
     clip::image img(image->getData()->data(), spec);
     clip::set_image(img);
 
-    m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" , m_inline, m_font_size });
+    m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" });
 }
 void MainApp::save_to_file() {
     if (m_save_to_file) {
@@ -140,7 +140,7 @@ void MainApp::save_to_file() {
         auto image = m_latex_image->getImage();
         stbi_write_png(filename.c_str(), image->width(), image->height(), 4, image->getData()->data(), image->width() * 4);
         m_just_saved_to_file = true;
-        m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" , m_inline, m_font_size });
+        m_history.saveToHistory({ m_txt, (float)image->width() / (float)image->height(), "" });
     }
 }
 void MainApp::options() {
@@ -148,6 +148,27 @@ void MainApp::options() {
     ImGui::DragInt("Size", &m_font_size, 1.f, 4, 250);
     ImGui::SameLine();
     ImGui::Checkbox("Inline", &m_inline);
+    ImGui::SameLine();
+    const auto& families = Latex::getFontFamilies();
+    m_family_idx = 0;
+    ImGui::SetNextItemWidth(200);
+    if (ImGui::BeginCombo("Font", families[m_family_idx].c_str())) {
+        for (int n = 0; n < families.size(); n++) {
+            bool is_selected = (m_family_idx == n);
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+            if (ImGui::Selectable(families[n].c_str(), is_selected))
+                m_family_idx = n;
+        }
+        ImGui::EndCombo();
+
+        if (m_family_idx != m_prev_family_idx) {
+            Latex::setDefaultFontFamily(families[m_family_idx]);
+            m_prev_family_idx = m_family_idx;
+            std::cout << families.size() << std::endl;
+            m_prev_text = "";
+        }
+    }
     if (ImGui::CollapsingHeader("Other options:")) {
         // ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
         ImGui::ColorEdit4("Text color", m_text_color);
@@ -300,8 +321,6 @@ void MainApp::FrameUpdate() {
     if (m_history.must_retrieve_latex(hist)) {
         m_latex_editor.set_text(hist.latex);
         m_txt = hist.latex;
-        m_font_size = hist.size;
-        m_inline = hist.is_inline;
         m_prev_text = "";
     }
 }

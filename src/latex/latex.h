@@ -13,13 +13,19 @@ namespace Latex {
      *
      * @return std::string error message if failed
      */
-    std::string init();
+    std::string init(const std::string& family = "XITS");
+
+    std::vector<std::string> getFontFamilies();
+    void setDefaultFontFamily(const std::string& family);
+
 
     /**
      * @brief returns true if latex has been initialized
      * otherwise false
      */
     bool isInitialized();
+
+    void release();
 
     /**
      * @brief A LatexImage generates an image from a latex source

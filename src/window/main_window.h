@@ -29,6 +29,8 @@ private:
     float m_background_color[3] = { 1.f, 1.f, 1.f };
     bool m_inline = false;
     bool m_prev_inline = false;
+    int m_family_idx = 0;
+    int m_prev_family_idx = 0;
 
     float time_until_clipboard = 1500.f;
     std::chrono::high_resolution_clock::time_point m_last_checkpoint;

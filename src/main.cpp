@@ -24,7 +24,6 @@ int main() {
     config.default_window_width = 720;
     config.default_window_height = 600;
 
-
     MainApp* app = new MainApp(err);
     Tempo::Run(app, config);
 
