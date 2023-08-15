@@ -17,13 +17,15 @@ namespace Latex {
             const FontSrcFile xits_regular("data/xits/XITS-Regular.clm2", "data/xits/XITS-Regular.otf");
             const FontSrcFile xits_bold("data/xits/XITS-Bold.clm2", "data/xits/XITS-Bold.otf");
             const FontSrcFile xits_italic("data/xits/XITS-Italic.clm2", "data/xits/XITS-Italic.otf");
+            // auto auto_font = microtex::InitFontSenseAuto();
             MicroTeX::init(math_regular);
-            // MicroTeX::addFont(math_bold);
+            MicroTeX::addFont(math_bold);
             MicroTeX::addFont(xits_boldItalic);
             MicroTeX::addFont(xits_regular);
             MicroTeX::addFont(xits_bold);
             MicroTeX::addFont(xits_italic);
             MicroTeX::setDefaultMainFont("XITS");
+            MicroTeX::setDefaultMathFont("XITS");
 
 
             PlatformFactory::registerFactory("abstract", std::make_unique<PlatformFactory_abstract>());
