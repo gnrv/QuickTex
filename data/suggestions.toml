@@ -13,24 +13,25 @@ commands = [
     { str = "\\left|\\right|", indices = [
         6,
     ], frequency = 0 },
-    { str = "\\left\\langle\\right\\rangle", indices = [
-        11,
+    { str = "\\left\\langle \\right\\rangle ", indices = [
+        12,
     ], frequency = 0 },
-    { str = "\\left\\lfloor\\right\\rfloor", indices = [
-        11,
+    { str = "\\left\\lfloor \\right\\rfloor ", indices = [
+        12,
     ], frequency = 0 },
-    { str = "\\left\\lceil\\right\\rceil", indices = [
-        11,
+    { str = "\\left\\lceil \\right\\rceil ", indices = [
+        12,
     ], frequency = 0 },
-    { str = "\\left\\vert\\right\\vert", indices = [
-        11,
+    { str = "\\left\\vert \\right\\vert ", indices = [
+        12,
     ], frequency = 0 },
-    { str = "\\left\\Vert\\right\\Vert", indices = [
-        11,
+    { str = "\\left\\Vert \\right\\Vert ", indices = [
+        12,
     ], frequency = 0 },
     # Matrices and alignement
-    { str = "\\begin{array}\n  \n\\end{array}", indices = [
-        16,
+    { str = "\\begin{array}{}\n  \n\\end{array}", indices = [
+        14,
+        18,
     ], frequency = 0 },
     { str = "\\begin{pmatrix}\n  \n\\end{pmatrix}", indices = [
         18,
@@ -47,9 +48,76 @@ commands = [
     { str = "\\begin{cases}\n  \n\\end{cases}", indices = [
         16,
     ], frequency = 0 },
-    { str = "\\begin{align}{}\n  \n\\end{align}", indices = [
+    { str = "\\begin{align}\n  \n\\end{align}", indices = [
+        16,
+    ], frequency = 0 },
+    # operators
+    { str = "\\dot{}", indices = [
+        5,
+    ], frequency = 0 },
+    { str = "\\ddot{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\hat{}", indices = [
+        5,
+    ], frequency = 0 },
+    { str = "\\check{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\breve{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\acute{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\grave{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\tilde{}", indices = [
+        7,
+    ], frequency = 0 },
+    { str = "\\bar{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\vec{}", indices = [
+        6,
+    ], frequency = 0 },
+    { str = "\\overrightarrow{}", indices = [
+        16,
+    ], frequency = 0 },
+    { str = "\\overleftarrow{}", indices = [
+        16,
+    ], frequency = 0 },
+    { str = "\\overleftrightarrow{}", indices = [
+        20,
+    ], frequency = 0 },
+    { str = "\\overline{}", indices = [
+        10,
+    ], frequency = 0 },
+    { str = "\\underline{}", indices = [
+        11,
+    ], frequency = 0 },
+    { str = "\\overbrace{}^{}", indices = [
+        11,
         14,
-        18,
+    ], frequency = 0 },
+    { str = "\\underbrace{}_{}", indices = [
+        11,
+        14,
+    ], frequency = 0 },
+    { str = "\\overset{}{}", indices = [
+        9,
+        11,
+    ], frequency = 0 },
+    { str = "\\underset{}{}", indices = [
+        9,
+        11,
+    ], frequency = 0 },
+    { str = "\\overleftarrow{}", indices = [
+        16,
+    ], frequency = 0 },
+    { str = "\\overrightarrow{}", indices = [
+        16,
     ], frequency = 0 },
     # Common math functions
     { str = "\\int_{}^{}", indices = [
@@ -96,14 +164,5 @@ commands = [
     # Math style
     { str = "\\mathbf{}", indices = [
         8,
-    ], frequency = 0 },
-    # Over/under brace
-    { str = "\\overbrace{}^{}", indices = [
-        11,
-        14,
-    ], frequency = 0 },
-    { str = "\\underbrace{}_{}", indices = [
-        11,
-        14,
     ], frequency = 0 },
 ]

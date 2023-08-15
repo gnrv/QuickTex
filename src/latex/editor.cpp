@@ -257,7 +257,6 @@ void LatexEditor::events(const Rect& boundaries) {
             m_start_suggesting = false;
         }
         else if (ImGui::IsMouseDoubleClicked(0)) {
-            std::cout << "Double clicked" << std::endl;
             select_word();
         }
     }

@@ -48,7 +48,15 @@ commands = [
     { str = "\\Chi", frequency = 0 },
     { str = "\\Psi", frequency = 0 },
     { str = "\\Omega", frequency = 0 },
+    # Symbols
+    { str = "\\infty", frequency = 0 },
     # Common math functions
     { str = "\\sin", frequency = 0 },
     { str = "\\cos", frequency = 0 },
+    # various
+    { str = "\\cdot ", frequency = 0 },
+    { str = "\\parallel", frequency = 0 },
+    { str = "\\times", frequency = 0 },
+    { str = "\\nabla", frequency = 0 },
+    { str = "\\quad", frequency = 0 },
 ]

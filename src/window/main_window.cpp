@@ -70,18 +70,11 @@ void MainApp::InitializationBeforeLoop() {
     bookmarks.description = "Shows the history";
     bookmarks.callback = [this]() {
         m_history.show();
-        set_clipboard();
         };
 
     Tempo::KeyboardShortCut::addShortcut(bookmarks);
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
-
-    // m_txt = "\\begin{align}\n"
-    //     "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
-    //     "       &=(x+y)(x^2+2xy+y^2)\\\\\n"
-    //     "       &=x^3+3x^2y+3xy^3+x^3.\n"
-    //     "\\end{align}";
 }
 void MainApp::AfterLoop() {
 }

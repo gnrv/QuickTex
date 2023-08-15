@@ -28,10 +28,11 @@ void History::load() {
     if (m_is_loaded)
         return;
     m_is_loaded = true;
-    std::fstream fs("data/history.toml", std::ios::in | std::ios::trunc);
-    if (!fs.is_open())
-        return;
-    auto file = toml::parse(fs);
+    std::fstream fs("data/history.toml", std::ios::in);
+    if (!fs.is_open()) {
+        std::fstream out("data/history.toml", std::ios::out | std::ios::trunc);
+    }
+    auto file = toml::parse("data/history.toml");
     auto history = toml::find_or<toml::table>(file, "history", toml::table());
     for (auto& pair : history) {
         auto& value = pair.second;
