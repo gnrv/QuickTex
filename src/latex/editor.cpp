@@ -258,6 +258,16 @@ void LatexEditor::make_history(HistoryAction action, const std::string& text_cpy
 }
 void LatexEditor::insert_with_selection(const std::string& str) {
     bool was_selection = false;
+    // Temporary fix for special chars in latex which makes the parser crash
+    std::string new_str;
+    for (unsigned char c : str) {
+        if (c < 128)
+            new_str += c;
+    }
+
+    if (new_str.empty())
+        return;
+
     if (m_cursor_selection_begin != m_cursor_pos) {
         was_selection = true;
         delete_at(m_cursor_selection_begin, m_cursor_pos, true, NONE);
@@ -265,9 +275,9 @@ void LatexEditor::insert_with_selection(const std::string& str) {
             m_cursor_pos = m_cursor_selection_begin;
     }
     if (was_selection)
-        insert_at(m_cursor_pos, str, false, FORCE);
+        insert_at(m_cursor_pos, new_str, false, FORCE);
     else
-        insert_at(m_cursor_pos, str, false, GUESS);
+        insert_at(m_cursor_pos, new_str, false, GUESS);
 }
 void LatexEditor::insert_at(size_t pos, const std::string& str, bool skip_cursor_move, HistoryAction action) {
     char current_char = m_text[pos];
