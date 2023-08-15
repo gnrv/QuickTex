@@ -15,13 +15,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(INSTALL_DIR "0.1")
 
-# ---- MicroTex ----
-add_subdirectory(external/microtex)
-include_directories(external/microtex)
-
 # ---- Cairo ----
 find_package(Cairo)
 include_directories(${CAIRO_INCLUDE_DIRS})
+
+# ---- MicroTex ----
+add_subdirectory(external/microtex)
+include_directories(external/microtex)
 
 # ---- Tempo app ----
 # ImGui config
@@ -67,15 +67,15 @@ file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 add_library(${PROJECT_NAME}_lib ${source_list})
 
 # Remove console on Windows
-if(MSVC)
-    # /ENTRY:mainCRTStartup keeps the same "main" function instead of requiring "WinMain"
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-else()
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
+# if(MSVC)
+# # /ENTRY:mainCRTStartup keeps the same "main" function instead of requiring "WinMain"
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+# else()
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 
-    # set(SUBSYSTEM_LINKER_OPTIONS "-mwindows")
-    # target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
-endif()
+# set(SUBSYSTEM_LINKER_OPTIONS "-mwindows")
+# target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
+# endif()
 
 # Main program executable
 add_executable(${PROJECT_NAME} src/main.cpp ${APP_ICON_RESOURCE_WINDOWS})
@@ -105,3 +105,13 @@ if(MSVC)
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
+
+if(WIN32)
+    # if config is debug set the variable to "/SUBSYSTEM:CONSOLE," else "/SUBSYSTEM:WINDOWS", append "/ENTRY:mainCRTStartup>" in any case
+    set(SUBSYSTEM_LINKER_OPTIONS "$<IF:$<CONFIG:Debug>,/SUBSYSTEM:CONSOLE,/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup>")
+else()
+    # if config is not debug set the variable to "-mwindows" else nothing
+    set(SUBSYSTEM_LINKER_OPTIONS "$<IF:$<NOT:$<CONFIG:Debug>>,-mwindows,>")
+endif()
+
+target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})

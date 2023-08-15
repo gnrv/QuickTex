@@ -776,7 +776,6 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
             p->draw(&m_draw_list, boundaries, pos);
         }
     }
-
     ImGui::SetCursorPos(ImVec2(m_total_width, m_total_height));
     ImGui::EndChild();
 }
