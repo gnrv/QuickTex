@@ -47,8 +47,9 @@ commands = [
     { str = "\\begin{cases}\n  \n\\end{cases}", indices = [
         16,
     ], frequency = 0 },
-    { str = "\\begin{align}\n  \n\\end{align}", indices = [
-        16,
+    { str = "\\begin{align}{}\n  \n\\end{align}", indices = [
+        14,
+        18,
     ], frequency = 0 },
     # Common math functions
     { str = "\\int_{}^{}", indices = [
@@ -90,6 +91,10 @@ commands = [
         8,
     ], frequency = 0 },
     { str = "\\textrm{}", indices = [
+        8,
+    ], frequency = 0 },
+    # Math style
+    { str = "\\mathbf{}", indices = [
         8,
     ], frequency = 0 },
     # Over/under brace

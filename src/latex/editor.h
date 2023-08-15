@@ -9,6 +9,7 @@
 
 #include "chars/im_char.h"
 #include "window/draw_commands.h"
+#include "search/commands.h"
 
 struct CharDecoInfo {
     enum Decoration { BACKGROUND, UNDERLINE, BOX, SQUIGLY };
@@ -52,6 +53,13 @@ private:
     std::map<size_t, size_t> m_openings_to_closings;
     std::set<size_t> m_line_positions;
     Draw::DrawList m_draw_list;
+
+    // Suggestions
+    Search::CommandSearch m_search_commands;
+    bool m_start_suggesting = false;
+    std::vector<Search::Command> m_search_results;
+    size_t m_search_highlight = 0;
+    std::string m_query;
 
     // Cursor related things
     float m_line_height = 15.f;
@@ -111,6 +119,7 @@ private:
     void home(bool shift);
     void end(bool shift);
     void select_word();
+    void set_cursor_idx(size_t pos, bool remove_selection);
 
     /**
      * @brief Modifies pos to next word
@@ -138,6 +147,7 @@ private:
     void char_decoration();
     void draw_decoration(ImVec2 char_p1, ImVec2 char_p2, const CharDecoInfo& decoration);
     void char_decoration(size_t from, size_t to, const std::vector<CharDecoInfo>& decorations);
+    void draw_suggestions();
 
     size_t coordinate_to_charpos(const ImVec2& relative_coordinate);
 

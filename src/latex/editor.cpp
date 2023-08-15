@@ -2,9 +2,12 @@
 
 #include "microtex/lib/core/formula.h"
 #include "microtex/lib/core/parser.h"
-
+#include <algorithm> 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+
+#define MAX(X,Y) ((X > Y) ? X : Y)
+#define MIN(X,Y) ((X < Y) ? X : Y)
 
 bool is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
@@ -90,26 +93,50 @@ void LatexEditor::events(const Rect& boundaries) {
         if (to_press & K_LEFT) {
             move_left(ctrl_or_cmd, io.KeyShift);
             set_last_key_pressed(K_LEFT);
+            m_start_suggesting = false;
         }
         else if (to_press & K_RIGHT) {
             move_right(ctrl_or_cmd, io.KeyShift);
             set_last_key_pressed(K_RIGHT);
+            m_start_suggesting = false;
         }
         else if (to_press & K_UP) {
-            move_up(io.KeyShift);
-            set_last_key_pressed(K_UP);
+            if (m_start_suggesting) {
+                if (m_search_highlight == 0) {
+                    m_search_highlight = m_search_results.size() - 1;
+                }
+                else {
+                    m_search_highlight--;
+                }
+            }
+            else {
+                move_up(io.KeyShift);
+                set_last_key_pressed(K_UP);
+            }
         }
         else if (to_press & K_DOWN) {
-            move_down(io.KeyShift);
-            set_last_key_pressed(K_DOWN);
+            if (m_start_suggesting) {
+                if (m_search_highlight == m_search_results.size() - 1) {
+                    m_search_highlight = 0;
+                }
+                else {
+                    m_search_highlight++;
+                }
+            }
+            else {
+                move_down(io.KeyShift);
+                set_last_key_pressed(K_DOWN);
+            }
         }
         else if (to_press & K_HOME) {
             home(io.KeyShift);
             set_last_key_pressed(K_HOME);
+            m_start_suggesting = false;
         }
         else if (to_press & K_END) {
             end(io.KeyShift);
             set_last_key_pressed(K_END);
+            m_start_suggesting = false;
         }
         else if (to_press & K_BACKSPACE) {
             if (m_cursor_pos != m_cursor_selection_begin) {
@@ -121,6 +148,7 @@ void LatexEditor::events(const Rect& boundaries) {
                 else
                     delete_at(m_cursor_pos - 1, m_cursor_pos, false);
             }
+            m_start_suggesting = false;
         }
         else if (to_press & K_DEL) {
             if (m_cursor_pos != m_cursor_selection_begin) {
@@ -132,10 +160,15 @@ void LatexEditor::events(const Rect& boundaries) {
                 else
                     delete_at(m_cursor_pos, m_cursor_pos + 1, false);
             }
+            m_start_suggesting = false;
         }
         else if (to_press & K_ENTER) {
             std::string to_insert = "\n";
             insert_with_selection(to_insert);
+            m_start_suggesting = false;
+        }
+        else if (to_press & K_ESCAPE) {
+            m_start_suggesting = false;
         }
         else if (io.InputQueueCharacters.Size > 0) {
             std::string to_insert;
@@ -143,6 +176,10 @@ void LatexEditor::events(const Rect& boundaries) {
                 unsigned int c = (unsigned int)io.InputQueueCharacters[n];
                 if (c == '\t' && io.KeyShift)
                     continue;
+                if (c == '\\')
+                    m_start_suggesting = true;
+                else if (!is_alphanum(c))
+                    m_start_suggesting = false;
                 to_insert += c;
             }
             insert_with_selection(to_insert);
@@ -155,23 +192,29 @@ void LatexEditor::events(const Rect& boundaries) {
             m_cursor_pos = m_text.size();
             m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
             m_cursor_find_pos = true;
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_D)) {
             select_word();
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_D)) {
             select_word();
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_C)) {
             ImGui::SetClipboardText(m_text.substr(m_cursor_selection_begin, m_cursor_pos - m_cursor_selection_begin).c_str());
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_V)) {
             std::string to_insert = ImGui::GetClipboardText();
             insert_with_selection(to_insert);
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_X)) {
             ImGui::SetClipboardText(m_text.substr(m_cursor_selection_begin, m_cursor_pos - m_cursor_selection_begin).c_str());
             delete_at(m_cursor_selection_begin, m_cursor_pos, false, FORCE);
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_Y)
             || ctrl_or_cmd && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) {
@@ -182,6 +225,7 @@ void LatexEditor::events(const Rect& boundaries) {
                 m_cursor_selection_begin = m_cursor_pos;
                 m_cursor_find_pos = true;
             }
+            m_start_suggesting = false;
         }
         else if (ctrl_or_cmd && ImGui::IsKeyPressed(ImGuiKey_Z)) {
             if (m_history_idx > 0) {
@@ -191,6 +235,7 @@ void LatexEditor::events(const Rect& boundaries) {
                 m_cursor_selection_begin = m_cursor_pos;
                 m_cursor_find_pos = true;
             }
+            m_start_suggesting = false;
         }
     }
 
@@ -209,6 +254,7 @@ void LatexEditor::events(const Rect& boundaries) {
             m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
             m_cursor_find_pos = true;
             m_start_dragging = true;
+            m_start_suggesting = false;
         }
         else if (ImGui::IsMouseDoubleClicked(0)) {
             std::cout << "Double clicked" << std::endl;
@@ -218,6 +264,7 @@ void LatexEditor::events(const Rect& boundaries) {
     else {
         if (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2)) {
             m_is_focused = false;
+            m_start_suggesting = false;
         }
     }
     if (ImGui::IsMouseReleased(0)) {
@@ -228,6 +275,7 @@ void LatexEditor::events(const Rect& boundaries) {
         m_cursor_line_number = find_line_number(m_cursor_pos);
         m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
         m_cursor_find_pos = true;
+        m_start_suggesting = false;
     }
 }
 
@@ -399,7 +447,14 @@ void LatexEditor::set_text(const std::string& text) {
 /* ===============================
  *       Text cursor movement
  * =============================== */
-
+void LatexEditor::set_cursor_idx(size_t pos, bool remove_selection) {
+    m_cursor_pos = pos;
+    if (remove_selection)
+        m_cursor_selection_begin = m_cursor_pos;
+    m_cursor_line_number = find_line_number(m_cursor_pos);
+    m_cursor_last_hpos = m_cursor_pos - find_line_begin(m_cursor_pos);
+    m_cursor_find_pos = true;
+}
 void LatexEditor::move_up(bool shift) {
     if (m_cursor_line_number > 0) {
         m_cursor_find_pos = true;
@@ -671,6 +726,65 @@ void LatexEditor::draw_decoration(ImVec2 char_p1, ImVec2 char_p2, const CharDeco
         }
     }
 }
+void LatexEditor::draw_suggestions() {
+    if (!m_start_suggesting)
+        return;
+    std::string query;
+    size_t i = m_cursor_pos - 1;
+    while (i >= 0) {
+        query += m_text[i];
+        if (m_text[i] == '\\')
+            break;
+        i--;
+    }
+    size_t start_pos = i;
+    std::reverse(query.begin(), query.end());
+    if (query != m_query && query.size() > 1) {
+        m_search_results = m_search_commands.getBestSuggestions(query);
+        m_search_highlight = 0;
+    }
+    if (m_search_results.size() > 0) {
+        Fonts::FontInfoOut fout;
+        UIState::getInstance().font_manager.requestFont({ Fonts::F_MONOSPACE, Fonts::W_REGULAR, Fonts::S_NORMAL }, fout);
+        Tempo::PushFont(fout.font_id);
+        int num_results = m_search_results.size();
+        auto& style = ImGui::GetStyle();
+        float item_height = ImGui::GetTextLineHeight() + style.FramePadding.y * 2.0f;
+        float window_height = item_height * (float)MIN(MAX(1, num_results), 5) + style.FramePadding.y * 2.0f;
+
+        ImVec2 pos = ImGui::GetCursorScreenPos() + m_cursor_drawpos;
+        pos.x -= 1.f;
+        ImVec2 end_pos = pos;
+        end_pos.y += m_line_height * m_line_space;
+        ImGui::SetNextWindowPos(end_pos);
+        ImGui::SetNextWindowSize(ImVec2(0, window_height));
+        ImGui::SetNextWindowBgAlpha(0.9f);
+        static bool show = true;
+
+        ImGui::Begin("#Search results", &show,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking
+            | ImGuiWindowFlags_NoFocusOnAppearing);
+        int i = 0;
+        for (auto& command : m_search_results) {
+            ImGui::SetNextWindowFocus();
+            if (m_search_highlight == i && ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+                show = false;
+                m_start_suggesting = false;
+                delete_at(start_pos, m_cursor_pos, true, LatexEditor::HistoryAction::NONE);
+                insert_at(start_pos, command.str, false, LatexEditor::HistoryAction::FORCE);
+                set_cursor_idx(start_pos + command.indices[0], true);
+            }
+            // ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+            ImGui::Selectable(command.str.c_str(), m_search_highlight == i);
+            // ImGui::PopStyleColor();
+            i++;
+        }
+        Tempo::PopFont();
+        ImGui::End();
+    }
+    m_query = query;
+
+}
 void LatexEditor::char_decoration(size_t from, size_t to, const std::vector<CharDecoInfo>& decorations) {
     ImVec2 highlight_from;
     ImVec2 highlight_to;
@@ -788,6 +902,7 @@ void LatexEditor::draw(std::string& latex, ImVec2 size) {
             p->draw(&m_draw_list, boundaries, pos);
         }
     }
+    draw_suggestions();
     ImGui::SetCursorPos(ImVec2(m_total_width, m_total_height));
     ImGui::EndChild();
 }

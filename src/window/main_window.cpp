@@ -70,11 +70,12 @@ void MainApp::InitializationBeforeLoop() {
     bookmarks.description = "Shows the history";
     bookmarks.callback = [this]() {
         m_history.show();
+        set_clipboard();
         };
 
+    Tempo::KeyboardShortCut::addShortcut(bookmarks);
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
-    Tempo::KeyboardShortCut::addShortcut(bookmarks);
 
     // m_txt = "\\begin{align}\n"
     //     "(x+y)^3&=(x+y)(x+y)^2\\\\\n"
@@ -99,7 +100,7 @@ float MainApp::check_time() {
     return (float)t1 / time_until_clipboard;
 }
 bool MainApp::is_valid() {
-    return m_err.empty() && m_latex_image == nullptr && m_latex_image->getImage() == nullptr && m_latex_image->getImage()->width() == 0 && m_latex_image->getImage()->height() == 0;
+    return m_err.empty() && m_latex_image != nullptr && m_latex_image->getImage() != nullptr && m_latex_image->getImage()->width() > 0 && m_latex_image->getImage()->height() > 0;
 }
 
 void MainApp::set_clipboard() {
@@ -151,7 +152,7 @@ void MainApp::save_to_file() {
 }
 void MainApp::options() {
     ImGui::SetNextItemWidth(200);
-    ImGui::DragInt("Size", &m_font_size, 1.f, 4, 150);
+    ImGui::DragInt("Size", &m_font_size, 1.f, 4, 250);
     ImGui::SameLine();
     ImGui::Checkbox("Inline", &m_inline);
     if (ImGui::CollapsingHeader("Other options:")) {

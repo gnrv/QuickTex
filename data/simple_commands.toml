@@ -49,4 +49,6 @@ commands = [
     { str = "\\Psi", frequency = 0 },
     { str = "\\Omega", frequency = 0 },
     # Common math functions
+    { str = "\\sin", frequency = 0 },
+    { str = "\\cos", frequency = 0 },
 ]
