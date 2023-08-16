@@ -158,11 +158,35 @@ commands = [
     { str = "\\textit{}", indices = [
         8,
     ], frequency = 0 },
-    { str = "\\textrm{}", indices = [
-        8,
-    ], frequency = 0 },
     # Math style
     { str = "\\mathbf{}", indices = [
         8,
+    ], frequency = 0 },
+    { str = "\\mathbfit{}", indices = [
+        10,
+    ], frequency = 0 },
+    { str = "\\mathcal{}", indices = [
+        9,
+    ], frequency = 0 },
+    { str = "\\mathfrak{}", indices = [
+        9,
+    ], frequency = 0 },
+    { str = "\\mathit{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\mathsf{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\mathtt{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\mathbb{}", indices = [
+        8,
+    ], frequency = 0 },
+    { str = "\\mathscr{}", indices = [
+        9,
+    ], frequency = 0 },
+    { str = "\\mathnormal{}", indices = [
+        11,
     ], frequency = 0 },
 ]

@@ -6,13 +6,14 @@
 #include "fonts/fonts.h"
 #include "state.h"
 #include "clip.h"
+#include "imutil.h"
 
-#include "imgui_stdlib.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 // #include "microtex/lib/core/parser.h"
 // #include "microtex/lib/core/formula.h"
+
 
 void setFonts() {
     using namespace Fonts;
@@ -75,6 +76,9 @@ void MainApp::InitializationBeforeLoop() {
     Tempo::KeyboardShortCut::addShortcut(bookmarks);
     Tempo::KeyboardShortCut::addShortcut(shortcut_savetofile);
     Tempo::KeyboardShortCut::addShortcut(shortcut);
+
+    m_defaults = loadDefaults();
+    m_prev_defaults = m_defaults;
 }
 void MainApp::AfterLoop() {
 }
@@ -85,6 +89,9 @@ bool compare_floats(float* ptr1, float* ptr2, int size) {
             return false;
     }
     return true;
+}
+bool compare_imvec4(const ImVec4& left, const ImVec4& right) {
+    return compare_floats((float*)&left, (float*)&right, 4);
 }
 
 float MainApp::check_time() {
@@ -122,7 +129,6 @@ void MainApp::set_clipboard() {
 void MainApp::save_to_file() {
     if (m_save_to_file) {
         m_save_to_file = false;
-
         if (!is_valid())
             return;
 
@@ -145,34 +151,33 @@ void MainApp::save_to_file() {
 }
 void MainApp::options() {
     ImGui::SetNextItemWidth(200);
-    ImGui::DragInt("Size", &m_font_size, 1.f, 4, 250);
+    ImGui::DragInt("Size", &m_defaults.font_size, 1.f, 4, 250);
     ImGui::SameLine();
-    ImGui::Checkbox("Inline", &m_inline);
+    ImGui::Checkbox("Inline", &m_defaults.is_inline);
     ImGui::SameLine();
     const auto& families = Latex::getFontFamilies();
-    m_family_idx = 0;
-    ImGui::SetNextItemWidth(200);
-    if (ImGui::BeginCombo("Font", families[m_family_idx].c_str())) {
+    ImGui::SetNextItemWidth(300);
+    if (ImGui::BeginCombo("Font", families[m_defaults.font_family_idx].c_str())) {
         for (int n = 0; n < families.size(); n++) {
-            bool is_selected = (m_family_idx == n);
+            bool is_selected = (m_defaults.font_family_idx == n);
+            if (ImGui::Selectable(families[n].c_str(), is_selected))
+                m_defaults.font_family_idx = n;
             if (is_selected)
                 ImGui::SetItemDefaultFocus();
-            if (ImGui::Selectable(families[n].c_str(), is_selected))
-                m_family_idx = n;
         }
         ImGui::EndCombo();
 
-        if (m_family_idx != m_prev_family_idx) {
-            Latex::setDefaultFontFamily(families[m_family_idx]);
-            m_prev_family_idx = m_family_idx;
-            std::cout << families.size() << std::endl;
+        if (m_defaults.font_family_idx != m_prev_defaults.font_family_idx) {
+            Latex::setDefaultFontFamily(families[m_defaults.font_family_idx]);
+            m_prev_defaults.font_family_idx = m_defaults.font_family_idx;
             m_prev_text = "";
+            saveDefaults(m_defaults);
         }
     }
     if (ImGui::CollapsingHeader("Other options:")) {
         // ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
-        ImGui::ColorEdit4("Text color", m_text_color);
-        ImGui::ColorEdit3("Background color (for visualization)", m_background_color);
+        ImGui::ColorEdit4("Text color", (float*)&m_defaults.text_color);
+        ImGui::ColorEdit3("Background color (for visualization)", (float*)&m_defaults.background_color);
         ImGui::Separator();
     }
 }
@@ -193,38 +198,15 @@ void MainApp::input_field(float width, float height) {
     }
 
     // Progress bar or shortcut display
-    if (m_latex_image != nullptr) {
-        if (m_autocopy_to_clipboard) {
-            float fraction = check_time();
-            if (fraction < 1) {
-                ImGui::Text("Soon to be copied");
-            }
-            else {
-                fraction = 1.f;
-                ImGui::TextColored(ImVec4(0.f, 0.7f, 0.f, 1.f), "Copied to clipboard");
-            }
-            auto draw_list = ImGui::GetWindowDrawList();
-            auto cursor_pos = ImGui::GetCursorScreenPos();
-            float progress_bar_width = 150;
-            draw_list->AddLine(
-                ImVec2(cursor_pos.x, cursor_pos.y + 5),
-                ImVec2(cursor_pos.x + progress_bar_width * fraction, cursor_pos.y + 5),
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.7f, 0.f, 1.f)),
-                5.f);
-            ImGui::Dummy(ImVec2(0, 10));
-        }
-        else {
-            if (m_has_pasted) {
-                if (m_just_saved_to_file)
-                    ImGui::Text("Saved to file");
-                else
-                    ImGui::Text("Copied to clipboard");
-            }
-            else {
-                std::string cmd_name = Tempo::getKeyName(CMD_KEY);
-                ImGui::Text("%s + S: copy to clipboard / %s + Shift + S: save to file / %s + H: History", cmd_name.c_str(), cmd_name.c_str(), cmd_name.c_str());
-            }
-        }
+    if (m_latex_image != nullptr && m_has_pasted) {
+        if (m_just_saved_to_file)
+            ImGui::Text("Saved to file");
+        else
+            ImGui::Text("Copied to clipboard");
+    }
+    else {
+        std::string cmd_name = Tempo::getKeyName(CMD_KEY);
+        ImGui::Text("%s + S: copy to clipboard / %s + Shift + S: save to file / %s + H: History", cmd_name.c_str(), cmd_name.c_str(), cmd_name.c_str());
     }
 }
 
@@ -233,22 +215,22 @@ void MainApp::generate_image() {
     // Generating tex image
     if (!m_err.empty())
         return;
-    if (m_txt != m_prev_text || !compare_floats(m_text_color, m_prev_text_color, 4) || m_font_size != m_prev_font_size || m_inline != m_prev_inline) {
+    if (m_txt != m_prev_text || m_defaults.text_color != m_prev_defaults.text_color || m_defaults.font_size != m_prev_defaults.font_size || m_defaults.is_inline != m_prev_defaults.is_inline) {
+        if (m_txt == m_prev_text)
+            saveDefaults(m_defaults);
+
         m_prev_text = m_txt;
-        m_prev_font_size = m_font_size;
-        m_prev_inline = m_inline;
-        m_prev_text_color[0] = m_text_color[0];
-        m_prev_text_color[1] = m_text_color[1];
-        m_prev_text_color[2] = m_text_color[2];
-        m_prev_text_color[3] = m_text_color[3];
+        m_prev_defaults.font_size = m_defaults.font_size;
+        m_prev_defaults.is_inline = m_defaults.is_inline;
+        m_prev_defaults.text_color = m_defaults.text_color;
         std::string latex = m_txt;
-        if (!m_inline) {
+        if (!m_defaults.is_inline) {
             latex = "\\[" + m_txt + "\\]";
         }
         m_latex_image = std::make_unique<Latex::LatexImage>(
-            latex, (float)m_font_size * Tempo::GetScaling(),
+            latex, (float)m_defaults.font_size * Tempo::GetScaling(),
             7.f,
-            ImGui::ColorConvertFloat4ToU32(ImVec4(m_text_color[0], m_text_color[1], m_text_color[2], m_text_color[3])),
+            ImGui::ColorConvertFloat4ToU32(m_defaults.text_color),
             ImVec2(1.f, 1.f), ImVec2(0.f, 0.f));
 
         // Copy to clipboard timer
@@ -259,7 +241,7 @@ void MainApp::generate_image() {
 }
 void MainApp::result_window(float width) {
     // Result window
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(m_background_color[0], m_background_color[1], m_background_color[2], 1.f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, m_defaults.background_color);
     auto avail = ImGui::GetContentRegionAvail();
     if (avail.y < 100)
         avail.y = 100;
@@ -281,14 +263,14 @@ void MainApp::result_window(float width) {
         }
         else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
-            ImGui::Text(m_latex_image->getLatexErrorMsg().c_str());
+            ImGui::Text("%s", m_latex_image->getLatexErrorMsg().c_str());
             ImGui::PopStyleColor();
         }
     }
 
     if (!m_err.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
-        ImGui::Text(m_err.c_str());
+        ImGui::Text("%s", m_err.c_str());
         ImGui::PopStyleColor();
     }
     ImGui::EndChild();
@@ -327,8 +309,4 @@ void MainApp::FrameUpdate() {
 
 void MainApp::BeforeFrameUpdate() {
     generate_image();
-
-    float fraction = check_time();
-    if (fraction >= 1.f && !m_has_pasted && m_autocopy_to_clipboard)
-        set_clipboard();
 }

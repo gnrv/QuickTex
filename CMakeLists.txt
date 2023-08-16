@@ -7,6 +7,10 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
+
 # Set project name
 project(quicktex)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -107,3 +111,14 @@ if(WIN32)
 endif()
 
 target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
+
+# if(LINUX)
+#     install(TARGETS ${PROJECT_NAME}
+#         RUNTIME DESTINATION $ENV{HOME}
+#         LIBRARY DESTINATION $ENV{HOME}
+#         DESTINATION $ENV{HOME}
+#     )
+
+#     SET(CPACK_GENERATOR "DEB")
+#     SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK")
+# endif()

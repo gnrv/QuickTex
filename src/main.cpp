@@ -10,11 +10,14 @@
 #include "latex/latex.h"
 
 #include "window/main_window.h"
+#include "system/sys_util.h"
 
 #include <chrono>
-using namespace std::chrono;
+#include <fstream>
 
 int main() {
+    std::filesystem::current_path(getExecutablePath());
+
     std::string err = Latex::init();
     Tempo::Config config;
     config.app_name = "QuickTex";

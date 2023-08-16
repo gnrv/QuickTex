@@ -125,7 +125,7 @@ namespace Search {
                             best_word_index = i;
                         }
                     }
-                    if (best_word_index >= 0 && best_score > 50.) {
+                    if (best_word_index >= 0) {
                         used_words[result].insert(result_words[best_word_index]);
                         scores[result] += (int)best_score;
                         continue;

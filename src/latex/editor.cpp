@@ -756,13 +756,13 @@ void LatexEditor::draw_suggestions() {
         ImVec2 end_pos = pos;
         end_pos.y += m_line_height * m_line_space;
         ImGui::SetNextWindowPos(end_pos);
-        ImGui::SetNextWindowSize(ImVec2(0, window_height));
+        ImGui::SetNextWindowSize(ImVec2(0, window_height), ImGuiCond_Always);
         ImGui::SetNextWindowBgAlpha(0.9f);
         static bool show = true;
 
         ImGui::Begin("#Search results", &show,
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking
-            | ImGuiWindowFlags_NoFocusOnAppearing);
+            | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_AlwaysAutoResize);
         int i = 0;
         for (auto& command : m_search_results) {
             ImGui::SetNextWindowFocus();
