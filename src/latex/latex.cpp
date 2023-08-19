@@ -46,7 +46,7 @@ namespace Latex {
         }
     }
     std::vector<std::string> getFontFamilies() {
-        return { "XITS" , "Latin Modern", /*"XITS Bold" // Is broken, */ "Fira Math",  "Gyre DejaVu" };
+        return { "Latin Modern", "XITS" ,  /*"XITS Bold" // Is broken, */ "Fira Math",  "Gyre DejaVu" };
     }
     void setDefaultFontFamily(const std::string& family) {
         using namespace microtex;
