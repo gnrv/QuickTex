@@ -97,8 +97,6 @@ namespace Latex {
          */
         void forgetImage();
 
-        void setLatex(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK);
-
         /**
          * @brief Redraws the parsed latex into an image
          * getImage will return a valid image (if no latex error occured)

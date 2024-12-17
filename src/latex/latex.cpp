@@ -139,31 +139,6 @@ namespace Latex {
         m_image->reset();
     }
 
-    void LatexImage::setLatex(const std::string& latex_src, float font_size, float line_space, microtex::color text_color) {
-        delete m_render;
-        m_render = nullptr;
-        m_latex_error_msg.clear();
-        m_image = std::make_shared<Image>();
-        using namespace microtex;
-        try {
-            m_render = MicroTeX::parse(
-                latex_src,
-                0, font_size, line_space, text_color,
-                true,
-                OverrideTeXStyle(false, TexStyle::display),
-                font_family_math
-            );
-            float height = m_render->getHeight(); // total height of the box = ascent + descent
-            m_descent = m_render->getDepth();   // depth = descent
-            m_ascent = height - m_descent;
-
-            m_render->draw(m_graphics, 0.f, 0.f);
-        }
-        catch (std::exception& e) {
-            m_latex_error_msg = e.what();
-        }
-    }
-
     bool LatexImage::redraw(ImVec2 scale, ImVec2 inner_padding, bool animate) {
         if (m_latex_error_msg.empty())
             return render(scale, inner_padding, animate);
