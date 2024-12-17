@@ -480,11 +480,6 @@ void Graphics2D_abstract::fillPath(i32 id) {
     arguments.push_back(Argument(m_path_id));
     m_calls.push_back(Call{ "fillPath", arguments });
 }
-void Graphics2D_abstract::strokePath(i32 id) {
-    std::vector<Argument> arguments;
-    arguments.push_back(Argument(m_path_id));
-    m_calls.push_back(Call{ "strokePath", arguments });
-}
 void Graphics2D_abstract::drawText(const std::string& t, float x, float y) {
     updateFontInfo(t);
 
