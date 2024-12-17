@@ -1,0 +1,24 @@
+From 34d21ef69cdc7b90da48abd4e3871b5dbf95801c Mon Sep 17 00:00:00 2001
+From: Arvid Nilsson <arvid2.nilsson@gmail.com>
+Date: Tue, 17 Dec 2024 15:43:40 +0100
+Subject: [PATCH] Crash fix
+
+---
+ lib/atom/atom_font.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/atom/atom_font.cpp b/lib/atom/atom_font.cpp
+index f764225..7264e09 100644
+--- a/lib/atom/atom_font.cpp
++++ b/lib/atom/atom_font.cpp
+@@ -5,6 +5,7 @@
+ using namespace microtex;
+ 
+ sptr<Box> FontStyleAtom::createBox(Env& env) {
++  if (_atom == nullptr) return StrutBox::empty();
+   if (_nested) {
+     _mathMode ? env.addMathFontStyle(_style) : env.addTextFontStyle(_style);
+     auto box = _atom->createBox(env);
+-- 
+2.34.1
+
