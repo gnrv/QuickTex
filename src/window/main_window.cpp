@@ -336,4 +336,7 @@ void MainApp::BeforeFrameUpdate() {
         return; // Wait for better value
 
     generate_image();
+    if (m_animate) {
+        m_animate = m_latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
+    }
 }
