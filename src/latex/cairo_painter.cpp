@@ -200,6 +200,10 @@ void Cairo_Painter::fillPath(i32 id) {
     cairo_fill(m_context);
 }
 
+void Cairo_Painter::strokePath(i32 id) {
+    cairo_stroke(m_context);
+}
+
 void Cairo_Painter::drawLine(float x1, float y1, float x2, float y2) {
     ImVec2 p1 = getRealPos(x1, y1);
     ImVec2 p2 = getRealPos(x2, y2);

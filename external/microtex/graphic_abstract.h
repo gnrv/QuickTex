@@ -217,6 +217,7 @@ namespace microtex {
 
         /** Fill the path. */
         virtual void fillPath(i32 id) = 0;
+        virtual void strokePath(i32 id) = 0;
 
         // endregion
 
@@ -367,8 +368,10 @@ namespace microtex {
          * @brief Distributes the (functions) call list to the painter
          *
          * @param painter must be a child of Painter
+         * @param animate if true, the calls will be animated
+         * @return true if the animation is ongoing
          */
-        void distributeCallList(Painter* painter);
+        bool distributeCallList(Painter* painter, bool animate = false);
 
         /**
          * @brief Empties the call list
@@ -427,6 +430,8 @@ namespace microtex {
         void closePath() override;
 
         void fillPath(i32 id) override;
+
+        void strokePath(i32 id) override;
 
         /** Draw text */
         void drawText(const std::string& src, float x, float y);

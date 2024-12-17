@@ -77,6 +77,7 @@ namespace microtex {
         void closePath() override;
 
         void fillPath(i32 id) override;
+        void strokePath(i32 id) override;
 
         /** Draw text */
         void drawText(const std::string& src, float x, float y);

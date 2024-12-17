@@ -142,7 +142,13 @@ std::vector<Call> Graphics2D_abstract::getCallList() {
     return m_calls;
 }
 
-void Graphics2D_abstract::distributeCallList(Painter* painter) {
+bool Graphics2D_abstract::distributeCallList(Painter* painter, bool animate) {
+    static int n = 1;
+    if (!animate) {
+        n = m_calls.size();
+    }
+    int i = 0;
+    bool open_path = false;
     for (auto& call : m_calls) {
         if (call.fct_name == "setColor") {
             painter->setColor(call.arguments[0].getData<color>());
@@ -194,6 +200,7 @@ void Graphics2D_abstract::distributeCallList(Painter* painter) {
             );
         }
         else if (call.fct_name == "beginPath") {
+            open_path = true;
             painter->beginPath(call.arguments[0].getData<i32>());
         }
         else if (call.fct_name == "moveTo") {
@@ -224,7 +231,12 @@ void Graphics2D_abstract::distributeCallList(Painter* painter) {
             painter->closePath();
         }
         else if (call.fct_name == "fillPath") {
+            open_path = false;
             painter->fillPath(call.arguments[0].getData<i32>());
+        }
+        else if (call.fct_name == "strokePath") {
+            open_path = false;
+            painter->strokePath(call.arguments[0].getData<i32>());
         }
         else if (call.fct_name == "drawLine") {
             painter->drawLine(
@@ -270,7 +282,23 @@ void Graphics2D_abstract::distributeCallList(Painter* painter) {
                 call.arguments[5].getData<float>()
             );
         }
+        ++i;
+        if (i == n) {
+            break;
+        }
     }
+    if (open_path) {
+        // painter->setColor(cyan);
+        painter->setStroke(Stroke(20.f, CAP_ROUND, JOIN_ROUND));
+        painter->strokePath(0);
+    }
+    if (i == m_calls.size()) {
+        n = 1;
+        return false; // animation finished
+    }
+
+    ++n;
+    return true; // animation ongoing
 }
 void Graphics2D_abstract::resetCallList() {
     m_calls.clear();
@@ -451,6 +479,11 @@ void Graphics2D_abstract::fillPath(i32 id) {
     std::vector<Argument> arguments;
     arguments.push_back(Argument(m_path_id));
     m_calls.push_back(Call{ "fillPath", arguments });
+}
+void Graphics2D_abstract::strokePath(i32 id) {
+    std::vector<Argument> arguments;
+    arguments.push_back(Argument(m_path_id));
+    m_calls.push_back(Call{ "strokePath", arguments });
 }
 void Graphics2D_abstract::drawText(const std::string& t, float x, float y) {
     updateFontInfo(t);

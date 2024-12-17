@@ -44,8 +44,9 @@ namespace Latex {
         float m_baseline;
 
         std::string m_latex_error_msg;
+        bool m_animating;
 
-        void render(ImVec2 scale, ImVec2 inner_padding);
+        bool render(ImVec2 scale, ImVec2 inner_padding, bool animate);
     public:
         /**brief Create a Latex Image
          *
@@ -55,7 +56,9 @@ namespace Latex {
          * @param scale rescale the image (in x and y)
          * @param inner_padding horizontal and vertical inner padding (will be scaled)
          */
-        LatexImage(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK, ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f));
+        LatexImage(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK, ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f), bool animate = false);
+
+        bool isAnimating() const { return m_animating; }
 
         ~LatexImage();
 
@@ -94,6 +97,8 @@ namespace Latex {
          */
         void forgetImage();
 
+        void setLatex(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK);
+
         /**
          * @brief Redraws the parsed latex into an image
          * getImage will return a valid image (if no latex error occured)
@@ -101,7 +106,7 @@ namespace Latex {
          * @param scale rescale the image (in x and y)
          * @param inner_padding horizontal and vertical inner padding (will be scaled)
          */
-        void redraw(ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f));
+        bool redraw(ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f), bool animate = false);
     };
 
     using LatexImagePtr = std::shared_ptr<LatexImage>;

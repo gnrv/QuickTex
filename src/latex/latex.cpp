@@ -76,16 +76,17 @@ namespace Latex {
         is_initialized = false;
     }
 
-    void LatexImage::render(ImVec2 scale, ImVec2 inner_padding) {
+    bool LatexImage::render(ImVec2 scale, ImVec2 inner_padding, bool animate) {
         m_painter.start(ImVec2(ceil(m_render->getWidth()), ceil(m_render->getHeight())), scale, inner_padding);
-        m_graphics.distributeCallList(&m_painter);
+        bool animating = m_graphics.distributeCallList(&m_painter, animate);
         m_painter.finish();
         auto data = m_painter.getImageData();
         if (data != nullptr)
             m_image->setImage(data, m_painter.getImageDimensions().x, m_painter.getImageDimensions().y, Image::FILTER_BILINEAR);
+        return animating;
     }
 
-    LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color, ImVec2 scale, ImVec2 inner_padding) {
+    LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color, ImVec2 scale, ImVec2 inner_padding, bool animate) {
         if (!is_initialized) {
             m_latex_error_msg = "LateX has not been initialized";
             return;
@@ -115,7 +116,7 @@ namespace Latex {
             m_latex_error_msg = e.what();
         }
         if (m_latex_error_msg.empty())
-            render(scale, inner_padding);
+            m_animating = render(scale, inner_padding, animate);
     }
     LatexImage::~LatexImage() {
         if (m_render != nullptr) {
@@ -138,8 +139,35 @@ namespace Latex {
         m_image->reset();
     }
 
-    void LatexImage::redraw(ImVec2 scale, ImVec2 inner_padding) {
+    void LatexImage::setLatex(const std::string& latex_src, float font_size, float line_space, microtex::color text_color) {
+        delete m_render;
+        m_render = nullptr;
+        m_latex_error_msg.clear();
+        m_image = std::make_shared<Image>();
+        using namespace microtex;
+        try {
+            m_render = MicroTeX::parse(
+                latex_src,
+                0, font_size, line_space, text_color,
+                true,
+                OverrideTeXStyle(false, TexStyle::display),
+                font_family_math
+            );
+            float height = m_render->getHeight(); // total height of the box = ascent + descent
+            m_descent = m_render->getDepth();   // depth = descent
+            m_ascent = height - m_descent;
+
+            m_render->draw(m_graphics, 0.f, 0.f);
+        }
+        catch (std::exception& e) {
+            m_latex_error_msg = e.what();
+        }
+    }
+
+    bool LatexImage::redraw(ImVec2 scale, ImVec2 inner_padding, bool animate) {
         if (m_latex_error_msg.empty())
-            render(scale, inner_padding);
+            return render(scale, inner_padding, animate);
+
+        return false;
     }
 }

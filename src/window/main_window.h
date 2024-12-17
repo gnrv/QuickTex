@@ -38,6 +38,7 @@ private:
 
     std::string m_err;
     std::unique_ptr<Latex::LatexImage> m_latex_image = nullptr;
+    bool m_animate = false;
 
     float check_time();
 

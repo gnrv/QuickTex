@@ -201,6 +201,7 @@ void MainApp::input_field(float width, float height) {
     ImGui::Separator();
     if (m_latex_editor.has_text_changed()) {
         m_txt = m_latex_editor.get_text();
+        m_animate = true;
     }
 
     // Progress bar or shortcut display
@@ -234,11 +235,20 @@ void MainApp::generate_image() {
         if (!m_defaults.is_inline) {
             latex = "\\[" + m_txt + "\\]";
         }
-        m_latex_image = std::make_unique<Latex::LatexImage>(
-            latex, (float)m_defaults.font_size * Tempo::GetScaling(),
-            7.f,
-            ImGui::ColorConvertFloat4ToU32(m_defaults.text_color),
-            ImVec2(1.f, 1.f), ImVec2(0.f, 0.f));
+        if (true /*!m_latex_image*/) {
+            m_latex_image = std::make_unique<Latex::LatexImage>(
+                latex, (float)m_defaults.font_size * Tempo::GetScaling(),
+                7.f,
+                ImGui::ColorConvertFloat4ToU32(m_defaults.text_color),
+                ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
+            m_animate = m_latex_image->isAnimating();
+        } else {
+            m_latex_image->setLatex(
+                latex, (float)m_defaults.font_size * Tempo::GetScaling(),
+                7.f,
+                ImGui::ColorConvertFloat4ToU32(m_defaults.text_color));
+            m_latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), false);
+        }
 
         // Copy to clipboard timer
         m_last_checkpoint = std::chrono::high_resolution_clock::now();
