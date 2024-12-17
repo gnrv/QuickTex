@@ -79,6 +79,8 @@ void TextLayout_abstract::getBounds(Rect& r) {
 
 }
 void TextLayout_abstract::draw(Graphics2D& g2, float x, float y) {
+    if (!m_font)
+        return;
     auto& g = static_cast<Graphics2D_abstract&>(g2);
     auto prev = g2.getFont();
     auto prevSize = g2.getFontSize();
