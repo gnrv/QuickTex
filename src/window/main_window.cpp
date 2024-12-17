@@ -85,6 +85,15 @@ void MainApp::InitializationBeforeLoop() {
         m_prev_defaults.font_family = "";
         m_prev_defaults.font_family_idx = 0;
     }
+
+    m_latex_editor.set_text(R"(\begin{gather}
+\gamma_\mu\gamma_\nu+\gamma_\nu\gamma_\mu=2\eta_{\mu\nu}\\
+\mathbf{\sigma}_i = \gamma_i \gamma_0\\
+\nabla\psi I\mathbf{\sigma}_3=m\psi\gamma_0\\
+i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
+\end{gather})");
+    m_txt = m_latex_editor.get_text();
+    m_animate = true;
 }
 void MainApp::AfterLoop() {
 }
