@@ -82,8 +82,6 @@ void MainApp::InitializationBeforeLoop() {
     auto families = Latex::getFontFamilies();
     if (m_defaults.font_family != "Latin Modern") {
         Latex::setDefaultFontFamily(families[m_defaults.font_family_idx]);
-        m_prev_defaults.font_family = "";
-        m_prev_defaults.font_family_idx = 0;
     }
 
     m_latex_editor.set_text(R"(\begin{gather}
@@ -238,7 +236,7 @@ void MainApp::generate_image() {
     if (!m_err.empty())
         return;
     if (m_txt != m_prev_text || m_defaults.text_color != m_prev_defaults.text_color || m_defaults.font_size != m_prev_defaults.font_size || m_defaults.is_inline != m_prev_defaults.is_inline
-        || m_defaults.font_family != m_prev_defaults.font_family) {
+        || m_defaults.font_family_idx != m_prev_defaults.font_family_idx) {
         if (m_txt == m_prev_text)
             saveDefaults(m_defaults);
 
