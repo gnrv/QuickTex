@@ -29,7 +29,7 @@ struct LatexEditorConfig {
     Colors::color selection_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
     Colors::color charbox_color = Colors::white;
     Colors::color error_color = Colors::red;
-    bool debug = false;
+    bool debug = true;
 };
 
 struct HistoryPoint {

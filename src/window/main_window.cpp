@@ -180,10 +180,16 @@ void MainApp::options() {
             saveDefaults(m_defaults);
         }
     }
+    ImGui::SameLine();
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     if (ImGui::CollapsingHeader("Other options:")) {
         // ImGui::Checkbox("Auto copy to clipboard", &m_autocopy_to_clipboard);
         ImGui::ColorEdit4("Text color", (float*)&m_defaults.text_color);
         ImGui::ColorEdit3("Background color (for visualization)", (float*)&m_defaults.background_color);
+        ImGui::SameLine();
+        if (ImGui::Button("Swap colors")) {
+            std::swap(m_defaults.text_color, m_defaults.background_color);
+        }
         ImGui::Separator();
     }
 }
