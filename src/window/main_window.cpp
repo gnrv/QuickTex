@@ -248,8 +248,9 @@ void MainApp::generate_image() {
         if (!m_defaults.is_inline) {
             latex = "\\[" + m_txt + "\\]";
         }
+        float font_size = (float)m_defaults.font_size * Tempo::GetScaling();
         m_latex_image = std::make_unique<Latex::LatexImage>(
-            latex, (float)m_defaults.font_size * Tempo::GetScaling(),
+            latex, font_size,
             7.f,
             ImGui::ColorConvertFloat4ToU32(m_defaults.text_color),
             ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
@@ -330,5 +331,9 @@ void MainApp::FrameUpdate() {
 }
 
 void MainApp::BeforeFrameUpdate() {
+    // On the very first call to BeforeFrameUpdate, Tempo::GetScaling() returns 0
+    if (!Tempo::GetScaling())
+        return; // Wait for better value
+
     generate_image();
 }
