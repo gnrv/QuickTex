@@ -844,11 +844,11 @@ size_t LatexEditor::coordinate_to_charpos(const ImVec2& relative_coordinate) {
 void LatexEditor::debug_window() {
     if (m_config.debug) {
         ImGui::Begin("Debug");
-        ImGui::Text("Cursor pos: %d", m_cursor_pos);
-        ImGui::Text("Cursor line: %d", m_cursor_line_number);
-        ImGui::Text("Cursor last h pos: %d", m_cursor_last_hpos);
+        ImGui::Text("Cursor pos: %zu", m_cursor_pos);
+        ImGui::Text("Cursor line: %zu", m_cursor_line_number);
+        ImGui::Text("Cursor last h pos: %zu", m_cursor_last_hpos);
         ImGui::Text("Is focused: %d", m_is_focused);
-        ImGui::Text("Text size: %d", m_text.size());
+        ImGui::Text("Text size: %zu", m_text.size());
         ImGui::Text("Width %f height %f", m_total_width, m_total_height);
         if (ImGui::TreeNode("History")) {
             for (auto it = m_history.rbegin();it != m_history.rend();it++) {
