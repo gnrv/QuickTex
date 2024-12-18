@@ -252,16 +252,18 @@ void MainApp::generate_image() {
         m_latex_image = std::make_unique<Latex::LatexImage>(
             latex, font_size,
             7.f,
-            ImGui::ColorConvertFloat4ToU32(m_defaults.text_color),
-            ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
-        m_animate = m_latex_image->isAnimating();
+            ImGui::ColorConvertFloat4ToU32(m_defaults.text_color));
 
         // Copy to clipboard timer
         m_last_checkpoint = std::chrono::high_resolution_clock::now();
         m_has_pasted = false;
         m_just_saved_to_file = false;
     }
+
+    if (m_animate)
+        m_animate = m_latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
 }
+
 void MainApp::result_window(float width) {
     // Result window
     ImGui::PushStyleColor(ImGuiCol_ChildBg, m_defaults.background_color);
@@ -336,7 +338,4 @@ void MainApp::BeforeFrameUpdate() {
         return; // Wait for better value
 
     generate_image();
-    if (m_animate) {
-        m_animate = m_latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), m_animate);
-    }
 }

@@ -86,7 +86,7 @@ namespace Latex {
         return animating;
     }
 
-    LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color, ImVec2 scale, ImVec2 inner_padding, bool animate) {
+    LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color) {
         if (!is_initialized) {
             m_latex_error_msg = "LateX has not been initialized";
             return;
@@ -115,8 +115,6 @@ namespace Latex {
         catch (std::exception& e) {
             m_latex_error_msg = e.what();
         }
-        if (m_latex_error_msg.empty())
-            m_animating = render(scale, inner_padding, animate);
     }
     LatexImage::~LatexImage() {
         if (m_render != nullptr) {
