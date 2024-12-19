@@ -41,6 +41,7 @@ namespace microtex {
         ImVec2 getImageDimensions() { return m_dimensions; }
 
         virtual void setColor(color c) override;
+        virtual color getColor() const override;
 
         virtual void setStroke(const Stroke& s) override;
 

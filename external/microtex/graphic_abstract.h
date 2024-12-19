@@ -35,7 +35,7 @@ namespace microtex {
         bool isempty() { return is_empty; }
 
         template<typename T>
-        auto getData() {
+        auto getData() const {
             return *std::static_pointer_cast<T>(m_data);
         }
     };
@@ -43,6 +43,7 @@ namespace microtex {
     struct Call {
         std::string fct_name;
         std::vector<Argument> arguments;
+        double t{ 0.f };
     };
 
     class MICROTEX_EXPORT Font_abstract : public Font {
@@ -114,6 +115,7 @@ namespace microtex {
          * @param c required color
          */
         virtual void setColor(color c) = 0;
+        virtual color getColor() const = 0;
 
         /** Set the stroke of the context */
         virtual void setStroke(const Stroke& s) = 0;
@@ -363,15 +365,6 @@ namespace microtex {
         FontInfos getFontInfos() {
             return m_font_infos;
         }
-
-        /**
-         * @brief Distributes the (functions) call list to the painter
-         *
-         * @param painter must be a child of Painter
-         * @param animate if true, the calls will be animated
-         * @return true if the animation is ongoing
-         */
-        bool distributeCallList(Painter* painter, bool animate = false);
 
         /**
          * @brief Empties the call list

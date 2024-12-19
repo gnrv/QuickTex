@@ -64,6 +64,10 @@ void Cairo_Painter::setColor(color c) {
     cairo_set_source_rgba(m_context, r, g, b, a);
 }
 
+color Cairo_Painter::getColor() const {
+    return m_color;
+}
+
 void Cairo_Painter::setStroke(const Stroke& s) {
     m_stroke = s;
     cairo_set_line_width(m_context, (double)s.lineWidth * m_scale.x);
