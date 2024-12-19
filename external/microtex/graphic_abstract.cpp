@@ -138,7 +138,7 @@ void Graphics2D_abstract::updateFontInfo(u32 c) {
 }
 
 
-std::vector<Call> Graphics2D_abstract::getCallList() {
+std::vector<Call> &Graphics2D_abstract::getCallList() {
     return m_calls;
 }
 

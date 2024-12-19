@@ -355,7 +355,7 @@ namespace microtex {
          * Must be called after render->draw(graphics_abstract, ...) has been called
          * @return std::vector<Call> list of all draw calls
          */
-        std::vector<Call> getCallList();
+        std::vector<Call> &getCallList();
 
         /**
          * @brief Returns information on all the fonts used, with the max size and the glyphs used

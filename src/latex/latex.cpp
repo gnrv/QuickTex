@@ -251,47 +251,47 @@ namespace Latex {
         return true; // animation ongoing
     }
 
-    bool distributeCallListFadeIn(const std::vector<Call> &calls, Painter* painter, bool animate) {
+    bool distributeCallListFadeIn(std::vector<Call> &calls, Painter* painter, bool animate) {
         static int n = 1;
+        static bool fading = false;
+        static int fading_i = 0;
         if (!animate) {
             n = calls.size();
         }
         int i = 0;
-        static bool fading = false;
-        static int fading_n = 0;
-        static float fading_t = 0;
-        float t = 0;
-        static int fading_path_i = 0;
         int path_i = 0;
-        if (fading) {
-            fading_t += ImGui::GetIO().DeltaTime;
-            t = ImSaturate(4*fading_t);
-        }
+        bool all_saturated = true;
         for (auto& call : calls) {
             if (call.fct_name == "beginPath") {
                 path_i = i;
-                if (fading && i == fading_path_i) {
-                    painter->scale(t, t);
+                if (!call.t) {
+                    call.t = ImGui::GetTime();
                 }
+                float t = ImSaturate(2*(ImGui::GetTime() - call.t));
+                if (t < 1)
+                    all_saturated = false;
+                painter->scale(0.5+t/2, 0.5+t/2);
                 visit(painter, call);
             }
             if (call.fct_name == "fillPath") {
-                if (!fading && i > fading_n && i == n - 1) {
+                if (!fading && i > fading_i && i == n - 1) {
                     fading = true;
-                    fading_n = i;
-                    fading_path_i = path_i;
-                    fading_t = 0;
-                } else if (fading && i == fading_n) {
-                    using namespace microtex;
-                    color c = painter->getColor();
-                    c = argb(t*color_a(c)/255.f, color_r(c)/255.f, color_g(c)/255.f, color_b(c)/255.f);
-                    painter->setColor(c);
-                    visit(painter, call);
-                    if (fading_t > 0.25) {
-                        fading = false;
-                    }
-                } else {
-                    visit(painter, call);
+                    fading_i = i;
+                }
+                if (!call.t) {
+                    call.t = ImGui::GetTime();
+                }
+                using namespace microtex;
+                color c = painter->getColor();
+                float t = ImSaturate(2*(ImGui::GetTime() - call.t));
+                if (t < 1)
+                    all_saturated = false;
+                c = argb(t*color_a(c)/255.f, color_r(c)/255.f, color_g(c)/255.f, color_b(c)/255.f);
+                painter->setColor(c);
+                visit(painter, call);
+                // After 0.001 seconds of fading, move on to the next path
+                if (fading_i == i && ImGui::GetTime() - call.t > 0.001) {
+                    fading = false;
                 }
             } else {
                 visit(painter, call);
@@ -301,8 +301,10 @@ namespace Latex {
                 break;
             }
         }
-        if (i == calls.size()) {
+        if (i == calls.size() && all_saturated) {
             n = 1;
+            fading = false;
+            fading_i = 0;
             return false; // animation finished
         }
 
