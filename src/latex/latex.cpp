@@ -212,10 +212,9 @@ namespace Latex {
         }
     }
     /**
-     * @brief Distributes the (functions) call list to the painter
+     * @brief Distributes the (functions) call list to the painter, with optional animation
      *
-     * @param painter must be a child of Painter
-     * @param animate if true, the calls will be animated
+     * @param animate if true, the calls will be animated with a Manim-inspired animation
      * @return true if the animation is ongoing
      */
     bool distributeCallListManim(const std::vector<Call> &calls, Painter* painter, bool animate) {
@@ -251,66 +250,49 @@ namespace Latex {
         return true; // animation ongoing
     }
 
+    /**
+     * @brief Distributes the (functions) call list to the painter, with optional animation
+     *
+     * Animates by scaling and fading in each path and fading in (no scaling) each draw/fill call
+     *
+     * @param animate if true, the calls will be animated
+     * @return true if the animation is ongoing
+     */
     bool distributeCallListFadeIn(std::vector<Call> &calls, Painter* painter, bool animate) {
-        static int n = 1;
-        static bool fading = false;
-        static int fading_i = 0;
-        if (!animate) {
-            n = calls.size();
+        static bool was_animating = false;
+        static double t_start = 0;
+        if (animate && !was_animating) {
+            t_start = ImGui::GetTime();
         }
         int i = 0;
-        int path_i = 0;
+        constexpr double t_offset = 0.05;
+        constexpr double t_scale = 4;
         bool all_saturated = true;
         for (auto& call : calls) {
+            // Compute local interpolation parameter t, 0 <= t <= 1
+            float t = ImSaturate(t_scale*(ImGui::GetTime() - t_start - i*t_offset));
+            if (t < 1)
+                all_saturated = false;
             if (call.fct_name == "beginPath") {
-                path_i = i;
-                if (!call.t) {
-                    call.t = ImGui::GetTime();
-                }
-                float t = ImSaturate(2*(ImGui::GetTime() - call.t));
-                if (t < 1)
-                    all_saturated = false;
-                painter->scale(0.5+t/2, 0.5+t/2);
+                painter->save(); // will be restored in fillPath
+                painter->scale(0.5 + t/2, 0.5 + t/2);
                 visit(painter, call);
-            }
-            if (call.fct_name == "fillPath") {
-                if (!fading && i > fading_i && i == n - 1) {
-                    fading = true;
-                    fading_i = i;
-                }
-                if (!call.t) {
-                    call.t = ImGui::GetTime();
-                }
-                using namespace microtex;
-                color c = painter->getColor();
-                float t = ImSaturate(2*(ImGui::GetTime() - call.t));
-                if (t < 1)
-                    all_saturated = false;
-                c = argb(t*color_a(c)/255.f, color_r(c)/255.f, color_g(c)/255.f, color_b(c)/255.f);
-                painter->setColor(c);
+            } else if (call.fct_name == "fillPath") {
+                painter->setColor(microtex::color_fade(painter->getColor(), t));
                 visit(painter, call);
-                // After 0.001 seconds of fading, move on to the next path
-                if (fading_i == i && ImGui::GetTime() - call.t > 0.001) {
-                    fading = false;
-                }
+                painter->restore(); // was saved in beginPath
+                ++i;
+            } else if (call.fct_name.rfind("draw", 0) == 0 || call.fct_name.rfind("fill", 0) == 0) {
+                painter->setColor(microtex::color_fade(painter->getColor(), t));
+                visit(painter, call);
+                ++i;
             } else {
                 visit(painter, call);
             }
-            ++i;
-            if (i == n) {
-                break;
-            }
-        }
-        if (i == calls.size() && all_saturated) {
-            n = 1;
-            fading = false;
-            fading_i = 0;
-            return false; // animation finished
         }
 
-        if (!fading)
-            ++n;
-        return true; // animation ongoing
+        was_animating = !all_saturated;
+        return was_animating;
     }
 
     bool LatexImage::render(ImVec2 scale, ImVec2 inner_padding, bool animate) {

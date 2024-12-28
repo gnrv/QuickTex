@@ -154,6 +154,14 @@ void Cairo_Painter::reset() {
     m_sx = m_sy = 1.f;
 }
 
+void Cairo_Painter::save() {
+    cairo_save(m_context);
+}
+
+void Cairo_Painter::restore() {
+    cairo_restore(m_context);
+}
+
 void Cairo_Painter::drawGlyph(u16, float, float) {
 }
 

@@ -13,6 +13,18 @@
 #include "graphic/graphic.h"
 
 namespace microtex {
+    // Extending microtex graphic_basic.h
+
+    /**
+     * @brief Set the alpha channel of the given color to t * color_a(c)
+     *
+     * @param c color to update
+     * @param t interpolation parameter (0 for transparent, 1 for original alpha)
+     */
+    inline color MICROTEX_EXPORT color_fade(color c, float t) {
+        return argb(int(t*color_a(c)), int(color_r(c)), int(color_g(c)), int(color_b(c)));
+    }
+
     /**
      * @brief Stores a function argument safely until retrieval
      *
@@ -176,6 +188,9 @@ namespace microtex {
 
         /** Reset transformations */
         virtual void reset() = 0;
+
+        virtual void save() = 0;
+        virtual void restore() = 0;
 
         /**
          * Draw glyph, is baseline aligned
