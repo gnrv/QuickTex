@@ -55,7 +55,6 @@ namespace microtex {
     struct Call {
         std::string fct_name;
         std::vector<Argument> arguments;
-        double t{ 0.f };
     };
 
     class MICROTEX_EXPORT Font_abstract : public Font {
