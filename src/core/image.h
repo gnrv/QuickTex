@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <tempo.h>
+#include <GL/gl.h>
+
+#include <memory>
 
 using ARGB_Image = std::vector<unsigned char>;
 using ARGB_Imageptr = std::shared_ptr<ARGB_Image>;

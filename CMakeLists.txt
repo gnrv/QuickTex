@@ -73,7 +73,7 @@ add_library(${PROJECT_NAME}_lib ${source_list})
 # Main program executable
 add_executable(${PROJECT_NAME} src/main.cpp ${APP_ICON_RESOURCE_WINDOWS})
 
-set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz)
+set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz GL)
 target_link_libraries(${PROJECT_NAME}_lib ${LIB_LINK})
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
