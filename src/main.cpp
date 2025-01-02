@@ -53,12 +53,44 @@ int main() {
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
+    float extra_scale = 1.f;
+    bool is_wsl2 = false;
+    std::ifstream file("/proc/version");
+    if (file.good()) {
+        std::string line;
+        std::getline(file, line);
+        if (line.find("WSL") != std::string::npos) {
+            // WSL2 detected
+            is_wsl2 = true;
+            extra_scale = 2.f; // Or whatever your setting is in Windows, e.g. 200% is 2.f
+        }
+    }
+
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(16*720/10, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(16*720*extra_scale/10, 720*extra_scale, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    float global_xscale, yscale;
+    glfwGetWindowContentScale(window, &global_xscale, &yscale);
+    printf("Content scale: %f %f\n", global_xscale, yscale);
+
+    // On WSL2, the scale returned is 1.0, even though Windows is using a scale of 200%.
+    // Watch out, because WSLg might be just blowing up the window to 2x! Resulting in a
+    // nastly pixellated look. Our framebuffer is still just 1x.
+    // Get rid of that totally fake scaling using
+    // $ cat /mnt/c/Users/<user>/.wslgconfig
+    // [system-distro-env]
+    // WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=100
+
+    // Try to detect WSL2
+    if (global_xscale == 1.0) {
+        if (is_wsl2) {
+            global_xscale = extra_scale;
+        }
+    }
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -82,6 +114,7 @@ int main() {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    style.ScaleAllSizes(global_xscale);
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -96,15 +129,15 @@ int main() {
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    ImFont *fira_sans = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 16.0f);
+    ImFont *fira_sans = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 16.0f*global_xscale);
 
     ImFontConfig config;
     config.MergeMode = true;
     config.GlyphMinAdvanceX = 16.0f; // Use if you want to make the icon monospaced
     static const ImWchar icon_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
-    io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f, &config, icon_ranges);
+    io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f*global_xscale, &config, icon_ranges);
 
-    ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f);
+    ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f*global_xscale);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
@@ -125,7 +158,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
     float font_size = 32.f;
     auto latex_image = std::make_unique<Latex::LatexImage>(
-        latex, font_size,
+        latex, font_size*global_xscale,
         7.f,
         ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
     bool animate_latex = true;

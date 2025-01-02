@@ -16,3 +16,9 @@
 [submodule "external/ImGuiColorTextEdit"]
 	path = external/ImGuiColorTextEdit
 	url = git@github.com:BalazsJako/ImGuiColorTextEdit.git
+[submodule "external/root-project/llvm-project"]
+	path = external/root-project/llvm-project
+	url = https://github.com/root-project/llvm-project.git
+[submodule "external/root-project/cling"]
+	path = external/root-project/cling
+	url = https://github.com/root-project/cling.git
