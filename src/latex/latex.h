@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <tempo.h>
+//#include <tempo.h>
 
 #include "core/image.h"
 #include "cairo_painter.h"
