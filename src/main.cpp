@@ -12,6 +12,8 @@
 
 #include "IconsMaterialDesignIcons.h"
 
+#include "TextEditor.h"
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -102,7 +104,7 @@ int main() {
     static const ImWchar icon_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
     io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f, &config, icon_ranges);
 
-    //ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f);
+    ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
@@ -127,6 +129,22 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         7.f,
         ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
     bool animate_latex = true;
+
+    TextEditor editor;
+    auto lang = TextEditor::LanguageDefinition::CPlusPlus();
+    editor.SetLanguageDefinition(lang);
+
+    static const char* fileToEdit = "../external/ImGuiColorTextEdit/TextEditor.cpp";
+//    static const char* fileToEdit = "test.cpp";
+
+    {
+        std::ifstream t(fileToEdit);
+        if (t.good())
+        {
+            std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+            editor.SetText(str);
+        }
+    }
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -156,6 +174,9 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::Begin("Code", 0, flags);
+        ImGui::PushFont(fira_mono);
+        editor.Render("TextEditor");
+        ImGui::PopFont();
         ImGui::End();
 
         // 2. Presentation window

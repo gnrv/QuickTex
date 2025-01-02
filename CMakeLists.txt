@@ -68,10 +68,11 @@ file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Making a library without the main, for the tests and the program
-add_library(${PROJECT_NAME}_lib ${source_list})
+add_library(${PROJECT_NAME}_lib ${source_list} ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp)
 
 # Main program executable
 add_executable(${PROJECT_NAME} src/main.cpp ${APP_ICON_RESOURCE_WINDOWS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit)
 
 set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz GL)
 target_link_libraries(${PROJECT_NAME}_lib ${LIB_LINK})
