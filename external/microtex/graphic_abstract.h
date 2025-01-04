@@ -7,8 +7,7 @@
 
 #include <vector>
 
-#define IMGUI_USE_WCHAR32
-#include <tempo.h>
+#include "imgui.h"
 #include "microtex.h"
 #include "graphic/graphic.h"
 

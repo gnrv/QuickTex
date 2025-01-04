@@ -1,14 +1,9 @@
-// #define TEMPO
-
 #include <iostream>
-#define IMGUI_USE_WCHAR32
-#ifdef TEMPO
-#include <tempo.h>
-#else
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 #include "IconsMaterialDesignIcons.h"
 
@@ -19,8 +14,6 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-#endif
-
 #include <string>
 
 #include <chrono>
@@ -29,22 +22,19 @@ static void glfw_error_callback(int error, const char* description)
 
 #include "latex/latex.h"
 
-#include "window/main_window.h"
-#include "system/sys_util.h"
-
 #include <chrono>
+//#include <filesystem>
 #include <fstream>
 
 #include "cling/Interpreter/Interpreter.h"
 
 int main(int argc, char **argv) {
-    std::filesystem::current_path(getExecutablePath());
+    //std::filesystem::current_path(getExecutablePath());
 
     std::string err = Latex::init();
 
     cling::Interpreter interp(argc, argv);
 
-#ifndef TEMPO
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -124,13 +114,7 @@ int main(int argc, char **argv) {
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
     ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
     style.ScaleAllSizes(dpi_scale);
 
     // Setup Platform/Renderer backends
@@ -353,7 +337,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                 if (latex_image->getLatexErrorMsg().empty()) {
                     if (animate_latex)
                         animate_latex = latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
-                    auto texture = latex_image->getImage()->texture();
+                    ImTextureID texture = latex_image->getImage()->texture();
                     ImGui::Image(texture, latex_image->getDimensions());
                 } else {
                     ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
@@ -412,17 +396,6 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Update and Render additional Platform Windows
-        // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-        //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-        }
-
         glfwSwapBuffers(window);
     }
 
@@ -433,17 +406,6 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
     glfwDestroyWindow(window);
     glfwTerminate();
-#else
-    Tempo::Config config;
-    config.app_name = "QuickTex";
-    config.app_title = "QuickTex - Quickly create math equations";
-    config.imgui_config_flags = ImGuiConfigFlags_DockingEnable;
-    config.poll_or_wait = Tempo::Config::POLL;
-    config.default_window_width = 720;
-    config.default_window_height = 600;
 
-    MainApp* app = new MainApp(err);
-    Tempo::Run(app, config);
-#endif
     return 0;
 }

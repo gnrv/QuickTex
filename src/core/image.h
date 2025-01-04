@@ -1,8 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <GL/gl.h>
-
+#include <glad/glad.h>
 #include <memory>
 
 using ARGB_Image = std::vector<unsigned char>;
@@ -80,6 +79,6 @@ public:
      * @return GL texture of image
      * This function is not safe. Always check if image is set with isImageSet()
      */
-    void* texture() const { return (void*)(intptr_t)texture_; }
+    GLuint texture() const { return texture_; }
 
 };

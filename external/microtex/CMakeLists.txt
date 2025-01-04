@@ -16,8 +16,7 @@ set_target_properties(
 
 target_compile_definitions(microtex-imgui PRIVATE -DMICROTEX_LIBRARY)
 target_include_directories(microtex-imgui PUBLIC .)
-target_include_directories(microtex-imgui PUBLIC ../TempoApp/include)
-target_include_directories(microtex-imgui PUBLIC ../TempoApp/external/glad)
+target_include_directories(microtex-imgui PUBLIC ../imgui/imgui)
 target_include_directories(microtex-imgui PUBLIC ../MicroTeX/lib)
 
-target_link_libraries(microtex-imgui PUBLIC Tempo microtex)
+target_link_libraries(microtex-imgui PUBLIC Imgui microtex)

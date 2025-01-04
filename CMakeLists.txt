@@ -27,11 +27,10 @@ include_directories(${CAIRO_INCLUDE_DIRS})
 add_subdirectory(external/microtex)
 include_directories(external/microtex)
 
-# ---- Tempo app ----
+# ---- ImGui ----
 # ImGui config
-add_subdirectory(external/TempoApp)
-include_directories(external/TempoApp/include)
-include_directories(external/TempoApp/external/imgui/imgui)
+add_subdirectory(external/imgui)
+include_directories(external/imgui/imgui)
 
 # ----- Rapidfuzz ------
 add_subdirectory(external/rapidfuzz-cpp)
@@ -54,6 +53,16 @@ set(CLIP_EXAMPLES OFF CACHE BOOL "Compile clip examples")
 set(CLIP_TESTS OFF CACHE BOOL "Compile clip tests")
 add_subdirectory(external/clip)
 
+# ----
+# GLAD
+# ----
+add_subdirectory(external/glad)
+
+# ----
+# GLFW
+# ----
+find_package(glfw3 REQUIRED)
+
 # Sources of program
 include_directories(src)
 file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -74,7 +83,7 @@ add_library(${PROJECT_NAME}_lib ${source_list} ${CMAKE_CURRENT_SOURCE_DIR}/exter
 add_executable(${PROJECT_NAME} src/main.cpp ${APP_ICON_RESOURCE_WINDOWS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit)
 
-set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz GL)
+set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz Imgui glad glfw)
 target_link_libraries(${PROJECT_NAME}_lib ${LIB_LINK})
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
