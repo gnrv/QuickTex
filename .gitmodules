@@ -10,9 +10,6 @@
 [submodule "external/rapidfuzz-cpp"]
 	path = external/rapidfuzz-cpp
 	url = https://github.com/maxbachmann/rapidfuzz-cpp.git
-[submodule "external/ImGuiColorTextEdit"]
-	path = external/ImGuiColorTextEdit
-	url = git@github.com:BalazsJako/ImGuiColorTextEdit.git
 [submodule "external/root-project/llvm-project"]
 	path = external/root-project/llvm-project
 	url = https://github.com/root-project/llvm-project.git
