@@ -35,10 +35,14 @@ static void glfw_error_callback(int error, const char* description)
 #include <chrono>
 #include <fstream>
 
-int main() {
+#include "cling/Interpreter/Interpreter.h"
+
+int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
 
     std::string err = Latex::init();
+
+    cling::Interpreter interp(argc, argv);
 
 #ifndef TEMPO
     // Setup window

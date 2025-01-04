@@ -79,6 +79,17 @@ target_link_libraries(${PROJECT_NAME}_lib ${LIB_LINK})
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
 
+# The cling library is located in external/root-project/cling-build/lib/libcling.so
+# and the include directory is in external/root-project/cling/include
+# The include directory is added to the include directories of the project
+# We also need to add the llvm include directory
+target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/llvm-project/llvm/include)
+target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/cling/include)
+target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/cling-build/include)
+target_link_directories(${PROJECT_NAME} PRIVATE external/root-project/cling-build/lib)
+target_link_libraries(${PROJECT_NAME} cling)
+
+
 # Copy the data (such as fonts) in build directory
 add_custom_command(TARGET quicktex PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
