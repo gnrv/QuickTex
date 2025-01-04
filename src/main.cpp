@@ -53,7 +53,15 @@ int main() {
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
-    float extra_scale = 1.f;
+    // On WSL2, the scale returned is 1.0, even though Windows is using a scale of 200%.
+    // Watch out, because WSLg might be just blowing up the window to 2x! Resulting in a
+    // nastly pixellated look. Our framebuffer is still just 1x.
+    // Get rid of that totally fake scaling using
+    // $ cat /mnt/c/Users/<user>/.wslgconfig
+    // [system-distro-env]
+    // WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=100
+    float dpi_scale = 1.f;
+    float window_size_scale_factor = 1.f;
     bool is_wsl2 = false;
     std::ifstream file("/proc/version");
     if (file.good()) {
@@ -62,35 +70,40 @@ int main() {
         if (line.find("WSL") != std::string::npos) {
             // WSL2 detected
             is_wsl2 = true;
-            extra_scale = 2.f; // Or whatever your setting is in Windows, e.g. 200% is 2.f
+            dpi_scale = 2.f; // Or whatever your setting is in Windows, e.g. 200% is 2.f
+            window_size_scale_factor = 2.f; // For the window size
         }
     }
 
+    // To determine possible window height, query the monitor height.
+    int monitor_count;
+    GLFWmonitor **monitors = glfwGetMonitors(&monitor_count);
+    int window_height = 720;
+    if (monitor_count) {
+        int w, h;
+        glfwGetMonitorWorkarea(monitors[0], NULL, NULL, &w, &h);
+        // Now find the greatest "p" we can have in 720p, 1080p etc
+        if (h > 1440) {
+            window_height = 1440;
+        } else if (h > 1080) {
+            window_height = 1080;
+        } else if (h > 720) {
+            window_height = 720;
+        }
+
+        if (!is_wsl2)
+            glfwGetMonitorContentScale(monitors[0], NULL, &dpi_scale);
+    }
+    printf("Content scale: %f\n", dpi_scale);
+
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(16*720*extra_scale/10, 720*extra_scale, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(16*window_height*window_size_scale_factor/10,
+                                          window_height*window_size_scale_factor,
+                                          "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-
-    float global_xscale, yscale;
-    glfwGetWindowContentScale(window, &global_xscale, &yscale);
-    printf("Content scale: %f %f\n", global_xscale, yscale);
-
-    // On WSL2, the scale returned is 1.0, even though Windows is using a scale of 200%.
-    // Watch out, because WSLg might be just blowing up the window to 2x! Resulting in a
-    // nastly pixellated look. Our framebuffer is still just 1x.
-    // Get rid of that totally fake scaling using
-    // $ cat /mnt/c/Users/<user>/.wslgconfig
-    // [system-distro-env]
-    // WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=100
-
-    // Try to detect WSL2
-    if (global_xscale == 1.0) {
-        if (is_wsl2) {
-            global_xscale = extra_scale;
-        }
-    }
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -114,7 +127,7 @@ int main() {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
-    style.ScaleAllSizes(global_xscale);
+    style.ScaleAllSizes(dpi_scale);
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -129,15 +142,15 @@ int main() {
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    ImFont *fira_sans = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 16.0f*global_xscale);
+    ImFont *fira_sans = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 16.0f*dpi_scale);
 
     ImFontConfig config;
     config.MergeMode = true;
     config.GlyphMinAdvanceX = 16.0f; // Use if you want to make the icon monospaced
     static const ImWchar icon_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
-    io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f*global_xscale, &config, icon_ranges);
+    io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f*dpi_scale, &config, icon_ranges);
 
-    ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f*global_xscale);
+    ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f*dpi_scale);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
@@ -156,9 +169,10 @@ int main() {
 i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 \end{gather})" };
 
-    float font_size = 32.f;
+    float slide_font_size = 64.f; // px
+    float slide_effective_font_size = 0;
     auto latex_image = std::make_unique<Latex::LatexImage>(
-        latex, font_size*global_xscale,
+        latex, slide_effective_font_size,
         7.f,
         ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
     bool animate_latex = true;
@@ -166,10 +180,10 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
     TextEditor editor;
     auto lang = TextEditor::LanguageDefinition::CPlusPlus();
     editor.SetLanguageDefinition(lang);
+    editor.SetImGuiChildIgnored(true);
 
-    static const char* fileToEdit = "../external/ImGuiColorTextEdit/TextEditor.cpp";
-//    static const char* fileToEdit = "test.cpp";
-
+#if 0
+    static const char* fileToEdit = "../src/main.cpp";
     {
         std::ifstream t(fileToEdit);
         if (t.good())
@@ -178,6 +192,9 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             editor.SetText(str);
         }
     }
+#else
+    editor.SetText("ImGui::Text(\"Hello, world!\");");
+#endif
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -206,9 +223,77 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         // 1. Code window
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::Begin("Code", 0, flags);
+        ImGui::Begin("Code", 0, flags | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Save"))
+                {
+                    auto textToSave = editor.GetText();
+                    /// save text....
+                }
+                if (ImGui::MenuItem("Quit", "Alt-F4"))
+                    break;
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit"))
+            {
+                bool ro = editor.IsReadOnly();
+                if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
+                    editor.SetReadOnly(ro);
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Undo", "Ctrl-Z", nullptr, !ro && editor.CanUndo()))
+                    editor.Undo();
+                if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && editor.CanRedo()))
+                    editor.Redo();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, editor.HasSelection()))
+                    editor.Copy();
+                if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && editor.HasSelection()))
+                    editor.Cut();
+                if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && editor.HasSelection()))
+                    editor.Delete();
+                if (ImGui::MenuItem("Paste", "Ctrl-V", nullptr, !ro && ImGui::GetClipboardText() != nullptr))
+                    editor.Paste();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Select all", nullptr, nullptr))
+                    editor.SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(editor.GetTotalLines(), 0));
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View"))
+            {
+                if (ImGui::MenuItem("Dark palette"))
+                    editor.SetPalette(TextEditor::GetDarkPalette());
+                if (ImGui::MenuItem("Light palette"))
+                    editor.SetPalette(TextEditor::GetLightPalette());
+                if (ImGui::MenuItem("Retro blue palette"))
+                    editor.SetPalette(TextEditor::GetRetroBluePalette());
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
         ImGui::PushFont(fira_mono);
+
+        // Disable the status bar, it causes scrollview content height to increase
+#if 0
+        auto cpos = editor.GetCursorPosition();
+        ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, editor.GetTotalLines(),
+            editor.IsOverwrite() ? "Ovr" : "Ins",
+            editor.CanUndo() ? "*" : " ",
+            editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
+#endif
+
         editor.Render("TextEditor");
+
         ImGui::PopFont();
         ImGui::End();
 
@@ -229,7 +314,22 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         // Let the presentation area contain 10 placeholder slides
         // of aspect ratio 16:10
         ImGui::Begin("Presentation", 0, flags);
+
+        // Slides are designed for 1080p, 16:10 aspect ratio
         ImVec2 slide_size{ width/2, width/2*10/16 };
+        float slide_scale = slide_size.y / 1080.f;
+
+        // Re-render the latex image if effective font size changed
+        if (slide_effective_font_size != slide_scale*slide_font_size*dpi_scale) {
+            // TODO: An option is to render at high resolution and then scale down the quad we render the texture on.
+            slide_effective_font_size = slide_scale*slide_font_size*dpi_scale;
+            latex_image = std::make_unique<Latex::LatexImage>(
+                latex, slide_effective_font_size,
+                7.f,
+                ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
+            animate_latex = true;
+        }
+
         for (int i = 0; i < 10; i++) {
             ImGui::PushID(i);
             ImGui::BeginChild("Slide", slide_size, false);
