@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
             // WSL2 detected
             is_wsl2 = true;
             dpi_scale = 2.f; // Or whatever your setting is in Windows, e.g. 200% is 2.f
-            window_size_scale_factor = 2.f; // For the window size
+            window_size_scale_factor = 1.f; // For the window size
         }
     }
 
