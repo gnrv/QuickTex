@@ -56,12 +56,31 @@ add_subdirectory(external/clip)
 # ----
 # GLAD
 # ----
-add_subdirectory(external/glad)
+#add_subdirectory(external/glad)
 
 # ----
 # GLFW
 # ----
 find_package(glfw3 REQUIRED)
+
+# -----
+# CLING
+# -----
+set(LLVM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/llvm")
+find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+set(Clang_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/clang")
+find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH)
+message(STATUS "Found Clang ${Clang_PACKAGE_VERSION}")
+message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
+
+set(Cling_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/tools/cling/lib/cmake/cling")
+find_package(Cling REQUIRED CONFIG NO_DEFAULT_PATH)
+message(STATUS "Found Cling ${Cling_PACKAGE_VERSION}")
+message(STATUS "Using ClingConfig.cmake in: ${Cling_DIR}")
+
 
 # Sources of program
 include_directories(src)
@@ -77,27 +96,37 @@ file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Making a library without the main, for the tests and the program
-add_library(${PROJECT_NAME}_lib ${source_list} ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp)
+add_library(${PROJECT_NAME}_lib
+    ${source_list}
+)
 
 # Main program executable
-add_executable(${PROJECT_NAME} src/main.cpp ${APP_ICON_RESOURCE_WINDOWS})
+set(LIBS
+clingInterpreter
+)
+add_executable(${PROJECT_NAME}
+src/main.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp
+${APP_ICON_RESOURCE_WINDOWS}
+)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
+
+# target_link_libraries(${PROJECT_NAME} PRIVATE
+# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingInterpreter.a
+# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingMetaProcessor.a
+# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingUtils.a
+# )
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit)
+target_include_directories(${PROJECT_NAME} PUBLIC ${LLVM_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CLANG_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CLING_INCLUDE_DIRS})
 
-set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz Imgui glad glfw)
-target_link_libraries(${PROJECT_NAME}_lib ${LIB_LINK})
+set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz Imgui GL glfw)
+#target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${LIB_LINK})
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-
-# The cling library is located in external/root-project/cling-build/lib/libcling.so
-# and the include directory is in external/root-project/cling/include
-# The include directory is added to the include directories of the project
-# We also need to add the llvm include directory
-target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/llvm-project/llvm/include)
-target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/cling/include)
-target_include_directories(${PROJECT_NAME} PRIVATE external/root-project/cling-build/include)
-target_link_directories(${PROJECT_NAME} PRIVATE external/root-project/cling-build/lib)
-target_link_libraries(${PROJECT_NAME} cling)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 
 # Copy the data (such as fonts) in build directory
 add_custom_command(TARGET quicktex PRE_BUILD

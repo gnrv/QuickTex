@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <glad/glad.h>
+#include <GL/gl.h>
 #include <memory>
 
 using ARGB_Image = std::vector<unsigned char>;

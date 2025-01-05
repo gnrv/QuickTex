@@ -1,0 +1,10 @@
+[
+    {
+      "name": "Cling Clang",
+      "compilers": {
+        "C": "${workspaceFolder}/external/root-project/cling-build/bin/clang",
+        "CXX": "${workspaceFolder}/external/root-project/cling-build/bin/clang++"
+      },
+      "isTrusted": true
+    }
+]

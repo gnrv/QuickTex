@@ -1,5 +1,5 @@
 #include <iostream>
-#include <glad/glad.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
