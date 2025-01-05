@@ -26,14 +26,20 @@ static void glfw_error_callback(int error, const char* description)
 //#include <filesystem>
 #include <fstream>
 
+#ifdef USE_CLING
 #include "cling/Interpreter/Interpreter.h"
+#endif
+
+#include "system/sys_util.h"
 
 int main(int argc, char **argv) {
-    //std::filesystem::current_path(getExecutablePath());
+    std::filesystem::current_path(getExecutablePath());
 
     std::string err = Latex::init();
 
+#ifdef USE_CLING
     cling::Interpreter interp(argc, argv);
+#endif
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);

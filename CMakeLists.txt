@@ -1,4 +1,3 @@
-# Set C++ 17 compiler flags
 if(MSVC)
     cmake_minimum_required(VERSION 3.21)
 else()
@@ -6,6 +5,9 @@ else()
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
+
+# Cacheable configuration options
+option(USE_CLING "Use cling" OFF)
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
@@ -66,21 +68,22 @@ find_package(glfw3 REQUIRED)
 # -----
 # CLING
 # -----
-set(LLVM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/llvm")
-find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+if(USE_CLING)
+    set(LLVM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/llvm")
+    find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH)
+    message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+    message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-set(Clang_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/clang")
-find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH)
-message(STATUS "Found Clang ${Clang_PACKAGE_VERSION}")
-message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
+    set(Clang_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/cmake/clang")
+    find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH)
+    message(STATUS "Found Clang ${Clang_PACKAGE_VERSION}")
+    message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
 
-set(Cling_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/tools/cling/lib/cmake/cling")
-find_package(Cling REQUIRED CONFIG NO_DEFAULT_PATH)
-message(STATUS "Found Cling ${Cling_PACKAGE_VERSION}")
-message(STATUS "Using ClingConfig.cmake in: ${Cling_DIR}")
-
+    set(Cling_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/tools/cling/lib/cmake/cling")
+    find_package(Cling REQUIRED CONFIG NO_DEFAULT_PATH)
+    message(STATUS "Found Cling ${Cling_PACKAGE_VERSION}")
+    message(STATUS "Using ClingConfig.cmake in: ${Cling_DIR}")
+endif()
 
 # Sources of program
 include_directories(src)
@@ -101,9 +104,12 @@ add_library(${PROJECT_NAME}_lib
 )
 
 # Main program executable
-set(LIBS
-clingInterpreter
-)
+if(USE_CLING)
+    set(LIBS clingInterpreter)
+else()
+    set(LIBS "")
+endif()
+
 add_executable(${PROJECT_NAME}
 src/main.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp
@@ -111,16 +117,14 @@ ${APP_ICON_RESOURCE_WINDOWS}
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 
-# target_link_libraries(${PROJECT_NAME} PRIVATE
-# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingInterpreter.a
-# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingMetaProcessor.a
-# ${CMAKE_CURRENT_SOURCE_DIR}/external/root-project/cling-build/lib/libclingUtils.a
-# )
-
+# Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiColorTextEdit)
-target_include_directories(${PROJECT_NAME} PUBLIC ${LLVM_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${CLANG_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${CLING_INCLUDE_DIRS})
+if(USE_CLING)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${LLVM_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CLANG_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CLING_INCLUDE_DIRS})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
+endif()
 
 set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz Imgui GL glfw)
 #target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
