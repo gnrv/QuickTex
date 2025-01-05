@@ -125,14 +125,14 @@ void Graphics2D_abstract::pushMinMax(float x, float y) {
 void Graphics2D_abstract::updateFontInfo(const std::string& text) {
     auto& font_infos = m_font_infos[m_font->getPath()];
     font_infos.text += text;
-    float actual_font_size = max(abs(m_sx) * m_font->getSize(), abs(m_sy) * m_font->getSize());
+    float actual_font_size = max(fabsf(m_sx) * m_font->getSize(), fabsf(m_sy) * m_font->getSize());
     if (actual_font_size > font_infos.max_real_size)
         font_infos.max_real_size = actual_font_size;
 }
 void Graphics2D_abstract::updateFontInfo(u32 c) {
     auto& font_infos = m_font_infos[m_font->getPath()];
     font_infos.glyphs.push_back(c);
-    float actual_font_size = max(abs(m_sx) * m_font->getSize(), abs(m_sy) * m_font->getSize());
+    float actual_font_size = max(fabsf(m_sx) * m_font->getSize(), fabsf(m_sy) * m_font->getSize());
     if (actual_font_size > font_infos.max_real_size)
         font_infos.max_real_size = actual_font_size;
 }
