@@ -5,37 +5,29 @@
 namespace Latex {
     bool is_initialized = false;
 
-    static std::string font_family = "XITS";
-    static std::string font_family_math = "XITS Math";
+    static std::string font_family = "Fira Math";
+    static std::string font_name_math = "Fira Math Regular";
 
     std::string init(const std::string& family) {
         using namespace microtex;
 
         microtex::MicroTeX::setRenderGlyphUsePath(true);
         try {
-            const FontSrcFile tex_gyre("data/tex-gyre/texgyredejavu-math.clm2", "data/tex-gyre/texgyredejavu-math.otf");
-            const FontSrcFile latin_modern("data/lm-math/latinmodern-math.clm2", "data/lm-math/latinmodern-math.otf");
             const FontSrcFile fira_math("data/firamath/FiraMath-Regular.clm2", "data/firamath/FiraMath-Regular.otf");
-            // XITS
-            const FontSrcFile math_regular("data/xits/XITSMath-Regular.clm2", "data/xits/XITSMath-Regular.otf");
-            // const FontSrcFile math_bold("data/xits/XITSMath-Bold.clm2", "data/xits/XITSMath-Bold.otf");
-            const FontSrcFile xits_boldItalic("data/xits/XITS-BoldItalic.clm2", "data/xits/XITS-BoldItalic.otf");
-            const FontSrcFile xits_regular("data/xits/XITS-Regular.clm2", "data/xits/XITS-Regular.otf");
-            const FontSrcFile xits_bold("data/xits/XITS-Bold.clm2", "data/xits/XITS-Bold.otf");
-            const FontSrcFile xits_italic("data/xits/XITS-Italic.clm2", "data/xits/XITS-Italic.otf");
+            const FontSrcFile fira_sans_boldItalic("data/firasans/FiraSansOT-BoldItalic.clm2", "data/firasans/FiraSansOT-BoldItalic.otf");
+            const FontSrcFile fira_sans_regular("data/firasans/FiraSansOT-Regular.clm2", "data/firasans/FiraSansOT-Regular.otf");
+            const FontSrcFile fira_sans_bold("data/firasans/FiraSansOT-Bold.clm2", "data/firasans/FiraSansOT-Bold.otf");
+            const FontSrcFile fira_sans_italic("data/firasans/FiraSansOT-RegularItalic.clm2", "data/firasans/FiraSansOT-RegularItalic.otf");
             // auto auto_font = microtex::InitFontSenseAuto();
 
-            MicroTeX::init(math_regular);
+            MicroTeX::init(fira_math);
             // MicroTeX::addFont(math_bold);
-            MicroTeX::addFont(xits_boldItalic);
-            MicroTeX::addFont(xits_regular);
-            MicroTeX::addFont(xits_bold);
-            MicroTeX::addFont(xits_italic);
-            MicroTeX::addFont(tex_gyre);
-            MicroTeX::addFont(latin_modern);
-            MicroTeX::addFont(fira_math);
-            MicroTeX::setDefaultMainFont("XITS");
-            MicroTeX::setDefaultMathFont("XITS");
+            MicroTeX::addFont(fira_sans_regular);
+            MicroTeX::addFont(fira_sans_bold);
+            MicroTeX::addFont(fira_sans_italic);
+            MicroTeX::addFont(fira_sans_boldItalic);
+            MicroTeX::setDefaultMainFont(font_family);
+            MicroTeX::setDefaultMathFont(font_name_math);
 
             PlatformFactory::registerFactory("abstract", std::make_unique<PlatformFactory_abstract>());
             PlatformFactory::activate("abstract");
@@ -44,27 +36,6 @@ namespace Latex {
         }
         catch (std::exception& e) {
             return e.what();
-        }
-    }
-    std::vector<std::string> getFontFamilies() {
-        return { "Latin Modern", "XITS" ,  /*"XITS Bold" // Is broken, */ "Fira Math",  "Gyre DejaVu" };
-    }
-    void setDefaultFontFamily(const std::string& family) {
-        using namespace microtex;
-        if (family == "XITS") {
-            font_family_math = "XITS Math";
-        }
-        // else if (family == "XITS Bold") {
-        //     font_family_math = "XITS Math Bold";
-        // }
-        else if (family == "Fira Math") {
-            font_family_math = "Fira Math Regular";
-        }
-        else if (family == "Latin Modern") {
-            font_family_math = "LatinModernMath-Regular";
-        }
-        else if (family == "Gyre DejaVu") {
-            font_family_math = "TeXGyreDejaVuMath-Regular";
         }
     }
 
@@ -320,8 +291,8 @@ namespace Latex {
                 latex_src,
                 0, font_size, line_space, text_color,
                 true,
-                OverrideTeXStyle(false, TexStyle::display),
-                font_family_math
+                OverrideTeXStyle(true, TexStyle::display),
+                font_name_math
             );
             float height = m_render->getHeight(); // total height of the box = ascent + descent
             m_descent = m_render->getDepth();   // depth = descent

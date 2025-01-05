@@ -15,9 +15,6 @@ namespace Latex {
      */
     std::string init(const std::string& family = "XITS");
 
-    std::vector<std::string> getFontFamilies();
-    void setDefaultFontFamily(const std::string& family);
-
 
     /**
      * @brief returns true if latex has been initialized
