@@ -153,7 +153,8 @@ int main(int argc, char **argv) {
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    //ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
 
     // Set up some math in microTex
     std::string latex{ R"(\begin{gather}
@@ -163,7 +164,7 @@ int main(int argc, char **argv) {
 i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 \end{gather})" };
 
-    float slide_font_size = 64.f; // px
+    float slide_font_size = 32.f; // px
     float slide_effective_font_size = 0;
     auto latex_image = std::make_unique<Latex::LatexImage>(
         latex, slide_effective_font_size,
@@ -341,10 +342,12 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 255));
             if (i == 0) {
                 if (latex_image->getLatexErrorMsg().empty()) {
-                    if (animate_latex)
+                    //if (animate_latex)
                         animate_latex = latex_image->redraw(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
-                    ImTextureID texture = latex_image->getImage()->texture();
-                    ImGui::Image(texture, latex_image->getDimensions());
+                    if (latex_image->getImage()) {
+                        ImTextureID texture = latex_image->getImage()->texture();
+                        ImGui::Image(texture, latex_image->getDimensions());
+                    }
                 } else {
                     ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
                 }

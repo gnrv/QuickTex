@@ -6,6 +6,7 @@
 
 #include "core/image.h"
 #include "cairo_painter.h"
+#include "imdrawlist_painter.h"
 
 namespace Latex {
     /**
@@ -35,7 +36,8 @@ namespace Latex {
         microtex::Render* m_render = nullptr;
         microtex::Graphics2D_abstract m_graphics;
         std::shared_ptr<Image> m_image;
-        microtex::Cairo_Painter m_painter;
+        microtex::ImDrawList_Painter m_painter;
+        //microtex::Cairo_Painter m_painter;
         float m_ascent;
         float m_descent;
         float m_baseline;

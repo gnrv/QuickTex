@@ -313,7 +313,10 @@ namespace Latex {
     }
 
     std::shared_ptr<Image> LatexImage::getImage() {
-        return m_image;
+        if (m_painter.getImageData() != nullptr)
+            return m_image;
+        else
+            return nullptr;
     }
 
     ImVec2 LatexImage::getDimensions() {
