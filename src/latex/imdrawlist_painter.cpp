@@ -34,7 +34,7 @@ void ImDrawList_Painter::start(ImVec2 dimensions, ImVec2 scale, ImVec2 inner_pad
     m_state = State();
     m_state_stack.clear();
 
-    m_draw_list = ImGui::GetForegroundDrawList();
+    m_draw_list = ImGui::GetWindowDrawList();
 
     m_origin = ImGui::GetCursorScreenPos();
 
@@ -220,7 +220,31 @@ void ImDrawList_Painter::fillPath(i32 id) {
         }
         std::cout << std::endl;
 #endif
-        m_draw_list->PathFillConcave(m_state.color);
+        // Calculate the sub-path winding order
+        // https://en.wikipedia.org/wiki/Nonzero-rule
+        // Scratch that, see if the path is mostly clockwise or mostly counter-clockwise
+        // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+        float count = 0;
+        for (int i = 0; i < m_draw_list->_Path.Size; i++) {
+            // For closed paths, the last point is the same as the first, so we'll just get 0
+            // on the last lap of the loop.
+            ImVec2 p1 = m_draw_list->_Path[i];
+            ImVec2 p2 = m_draw_list->_Path[(i + 1) % m_draw_list->_Path.Size];
+            count += (p2.x - p1.x) * (p2.y + p1.y);
+        }
+#if DEBUG
+        std::cout << "(counter-)clockwise count: " << count << std::endl;
+#endif
+        if (count < 0)
+            m_draw_list->PathFillConcave(m_state.color);
+        else {
+            // ImGui depends on the winding order to generate correct anti-aliasing.
+            // We need to reverse the points in the path
+            std::reverse(m_draw_list->_Path.begin(), m_draw_list->_Path.end());
+            // To punch a hole, draw using the background color
+            ImU32 style_bgcolor = ImGui::GetColorU32(ImGuiCol_WindowBg);
+            m_draw_list->PathFillConcave(style_bgcolor);
+        }
     }
 #if DEBUG
     std::cout << ")" << std::endl;

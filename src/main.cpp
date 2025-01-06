@@ -32,6 +32,8 @@ static void glfw_error_callback(int error, const char* description)
 
 #include "system/sys_util.h"
 
+#define ENABLE_CODE_WINDOW 1
+
 int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
 
@@ -153,8 +155,8 @@ int main(int argc, char **argv) {
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
-    //ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    //ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
 
     // Set up some math in microTex
     std::string latex{ R"(\begin{gather}
@@ -216,6 +218,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                     ImGuiWindowFlags_NoSavedSettings;
 
         // 1. Code window
+#if ENABLE_CODE_WINDOW
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::Begin("Code", 0, flags | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
@@ -291,6 +294,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
         ImGui::PopFont();
         ImGui::End();
+#endif // CODE WINDOW
 
         // 2. Presentation window
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
