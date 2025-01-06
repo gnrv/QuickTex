@@ -190,7 +190,28 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         }
     }
 #else
-    editor.SetText("ImGui::Text(\"Hello, world!\");");
+    //editor.SetText("ImGui::Text(\"Hello, world!\");");
+    // Bug with hole punching and background color
+    editor.SetText(R"(
+\newcolumntype{s}{>{\color{#1234B6}}c}
+\begin{array}{|c|c|c|s|}
+  \hline
+  \rowcolor{Tan}\multicolumn{4}{|c|}{\textcolor{white}{\bold{\text{Table Head}}}}\\
+  \hline
+  \text{Matrix}&\multicolumn{2}{|c|}{\text{Multicolumns}}&\text{Font size commands}\\
+  \hline
+  \begin{pmatrix}
+      \alpha_{11}&\cdots&\alpha_{1n}\\
+      \hdotsfor{3}\\
+      \alpha_{n1}&\cdots&\alpha_{nn}
+  \end{pmatrix}
+  &\large \text{Left}&\cellcolor{#00bde5}\small \textcolor{white}{\text{\bold{Right}}}
+  &\small \text{small Small}\\
+  \hline
+  \multicolumn{4}{|c|}{\text{Table Foot}}\\
+  \hline
+\end{array}
+)");
 #endif
 
     // Main loop
@@ -319,7 +340,8 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         float slide_scale = slide_size.y / 1080.f;
 
         // Re-render the latex image if effective font size changed
-        if (slide_effective_font_size != slide_scale*slide_font_size*dpi_scale) {
+        if (slide_effective_font_size != slide_scale*slide_font_size*dpi_scale || editor.IsTextChanged()) {
+            latex = editor.GetText();
             // TODO: An option is to render at high resolution and then scale down the quad we render the texture on.
             slide_effective_font_size = slide_scale*slide_font_size*dpi_scale;
             latex_image = std::make_unique<Latex::LatexImage>(

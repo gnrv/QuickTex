@@ -155,13 +155,16 @@ void ImDrawList_Painter::drawGlyph(u16, float, float) {
 }
 
 void ImDrawList_Painter::beginPath(i32 id) {
+#if DEBUG
+    std::cout << "beginPath()" << std::endl;
+#endif
     m_draw_list->PathClear();
 }
 
 void ImDrawList_Painter::moveTo(float x, float y) {
     if (m_draw_list->_Path.Size != 0) {
-        m_path.push_back(SubPath());
-        std::swap(m_draw_list->_Path, m_path.back().points);
+        m_path.push_back(SubPath(m_draw_list->_Path));
+        m_draw_list->PathClear();
     }
     ImVec2 pos = getRealPos(x, y);
     m_draw_list->PathLineTo(pos);
@@ -190,6 +193,9 @@ void ImDrawList_Painter::quadTo(float x1, float y1, float x2, float y2) {
 }
 
 void ImDrawList_Painter::closePath() {
+#if DEBUG
+    std::cout << "closePath()" << std::endl;
+#endif
     // The SubPath being built is stored in the m_draw_list->_Path,
     // so this is always operating on the current sub-path, not the first sub-path.
     if (m_draw_list->_Path.Size == 0)
@@ -197,55 +203,76 @@ void ImDrawList_Painter::closePath() {
     // NB: It is illegal to call push_back/push_front/insert with a reference pointing inside the ImVector data itself!
     //     we first need to copy it out.
     ImVec2 p = m_draw_list->_Path[0];
-    m_draw_list->PathLineTo(p);
+    // If the path already ends with that point, don't add it again, or we get some weird artifacts
+    if (m_draw_list->_Path.Size > 1 && m_draw_list->_Path[m_draw_list->_Path.Size - 1] != p)
+        m_draw_list->PathLineTo(p);
     pathSanityCheck();
 }
 
 void ImDrawList_Painter::fillPath(i32 id) {
 #if DEBUG
     std::cout << "fillPath(";
-    int subpath_i = 0;
+    int subpath_i = -1;
 #endif
+
     // Steal the last sub-path
-    m_path.push_back(SubPath());
-    std::swap(m_draw_list->_Path, m_path.back().points);
-    // Then draw all the stolen sub-paths
+    m_path.push_back(SubPath(m_draw_list->_Path));
+
+    // Then draw all the stolen sub-paths, starting with the clockwise ones
     for (auto& sub_path : m_path) {
+#if DEBUG
+        subpath_i++;
+#endif
+        if (sub_path.clockwise > 0)
+            continue;
+
         std::swap(m_draw_list->_Path, sub_path.points);
 #if DEBUG
-        std::cout << "sub-path " << subpath_i++ << ": ";
+        std::cout << "sub-path " << subpath_i << ": ";
         for (int i = 0; i < m_draw_list->_Path.Size; i++) {
             ImVec2 p = m_draw_list->_Path[i];
             std::cout << "[" << p.x << ", " << p.y << "], ";
         }
         std::cout << std::endl;
 #endif
-        // Calculate the sub-path winding order
-        // https://en.wikipedia.org/wiki/Nonzero-rule
-        // Scratch that, see if the path is mostly clockwise or mostly counter-clockwise
-        // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
-        float count = 0;
-        for (int i = 0; i < m_draw_list->_Path.Size; i++) {
-            // For closed paths, the last point is the same as the first, so we'll just get 0
-            // on the last lap of the loop.
-            ImVec2 p1 = m_draw_list->_Path[i];
-            ImVec2 p2 = m_draw_list->_Path[(i + 1) % m_draw_list->_Path.Size];
-            count += (p2.x - p1.x) * (p2.y + p1.y);
-        }
 #if DEBUG
-        std::cout << "(counter-)clockwise count: " << count << std::endl;
+        std::cout << "(counter-)clockwise count: " << sub_path.clockwise << std::endl;
 #endif
-        if (count < 0)
-            m_draw_list->PathFillConcave(m_state.color);
-        else {
-            // ImGui depends on the winding order to generate correct anti-aliasing.
-            // We need to reverse the points in the path
-            std::reverse(m_draw_list->_Path.begin(), m_draw_list->_Path.end());
-            // To punch a hole, draw using the background color
-            ImU32 style_bgcolor = ImGui::GetColorU32(ImGuiCol_WindowBg);
-            m_draw_list->PathFillConcave(style_bgcolor);
-        }
+        //m_draw_list->_Path.Size -= 1;
+        m_draw_list->PathFillConcave(m_state.color);
     }
+
+#if DEBUG
+    subpath_i = -1;
+#endif
+
+    for (auto& sub_path : m_path) {
+#if DEBUG
+        subpath_i++;
+#endif
+        if (sub_path.clockwise < 0)
+            continue;
+
+        std::swap(m_draw_list->_Path, sub_path.points);
+#if DEBUG
+        std::cout << "sub-path " << subpath_i << ": ";
+        for (int i = 0; i < m_draw_list->_Path.Size; i++) {
+            ImVec2 p = m_draw_list->_Path[i];
+            std::cout << "[" << p.x << ", " << p.y << "], ";
+        }
+        std::cout << std::endl;
+#endif
+#if DEBUG
+        std::cout << "(counter-)clockwise count: " << sub_path.clockwise << std::endl;
+#endif
+        // ImGui depends on the winding order to generate correct anti-aliasing.
+        // We need to reverse the points in the path
+        std::reverse(m_draw_list->_Path.begin(), m_draw_list->_Path.end());
+        // To punch a hole, draw using the background color
+        ImU32 style_bgcolor = ImGui::GetColorU32(ImGuiCol_WindowBg);
+        m_draw_list->PathFillConcave(style_bgcolor);
+    }
+
 #if DEBUG
     std::cout << ")" << std::endl;
 #endif
@@ -253,9 +280,12 @@ void ImDrawList_Painter::fillPath(i32 id) {
 }
 
 void ImDrawList_Painter::strokePath(i32 id) {
+#if DEBUG
+    std::cout << "strokePath()" << std::endl;
+#endif
     // Steal the last sub-path
-    m_path.push_back(SubPath());
-    std::swap(m_draw_list->_Path, m_path.back().points);
+    m_path.push_back(SubPath(m_draw_list->_Path));
+
     // Then draw all the stolen sub-paths
     for (auto& sub_path : m_path) {
         std::swap(m_draw_list->_Path, sub_path.points);
@@ -308,6 +338,7 @@ void ImDrawList_Painter::fillRoundRect(float x, float y, float w, float h, float
 }
 
 void ImDrawList_Painter::pathSanityCheck() {
+#if DEBUG
     // Sometimes we end up with a path that ends with a spurious [0, 0], let's
     // put a breakpoint here and see what the path looks like when that happens.
     if (m_draw_list->_Path.Size > 0) {
@@ -316,4 +347,15 @@ void ImDrawList_Painter::pathSanityCheck() {
             int i = 0;
         }
     }
+
+    // Sometimes we end up with a path that has a double copy of the first point at the end
+    if (m_draw_list->_Path.Size > 2) {
+        ImVec2 p1 = m_draw_list->_Path[0];
+        ImVec2 p2 = m_draw_list->_Path[m_draw_list->_Path.Size - 1];
+        ImVec2 p3 = m_draw_list->_Path[m_draw_list->_Path.Size - 2];
+        if (p2 == p3 && p1 == p2) {
+            int i = 0;
+        }
+    }
+#endif
 }

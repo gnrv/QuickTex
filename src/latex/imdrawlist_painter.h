@@ -32,7 +32,20 @@ namespace microtex {
         // into a SubPath. When the user calls fillPath or strokePath, we draw
         // all stored SubPaths.
         struct SubPath {
+            SubPath(const ImVector<ImVec2>& p) : points(p) {
+                // Calculate the clockwise count
+                // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+                for (int i = 0; i < points.Size; ++i) {
+                    // For closed paths, which is par for the game here,
+                    // the last point is the same as the first, so we'll just get 0
+                    // on the last lap of the loop.
+                    ImVec2 p1 = points[i];
+                    ImVec2 p2 = points[(i + 1) % points.Size];
+                    clockwise += (p2.x - p1.x) * (p2.y + p1.y);
+                }
+            }
             ImVector<ImVec2> points;
+            float clockwise{ 0 };
         };
         std::vector<SubPath> m_path;
 
