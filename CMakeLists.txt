@@ -18,12 +18,7 @@ project(quicktex)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(INSTALL_DIR "0.1")
-
-# ---- Cairo ----
-find_package(Cairo)
-include_directories(${CAIRO_INCLUDE_DIRS})
 
 # ---- MicroTex ----
 add_subdirectory(external/microtex)
@@ -126,7 +121,7 @@ if(USE_CLING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
 endif()
 
-set(LIB_LINK microtex-imgui ${CAIRO_LIBRARIES} clip rapidfuzz::rapidfuzz Imgui GL glfw)
+set(LIB_LINK microtex-imgui clip rapidfuzz::rapidfuzz Imgui GL glfw)
 #target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${LIB_LINK})
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
