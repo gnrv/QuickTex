@@ -8,7 +8,7 @@ namespace Latex {
     static std::string font_family = "Fira Math";
     static std::string font_name_math = "Fira Math Regular";
 
-    std::string init(const std::string& family) {
+    std::string init() {
         using namespace microtex;
 
         microtex::MicroTeX::setRenderGlyphUsePath(true);

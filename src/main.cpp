@@ -23,7 +23,7 @@ static void glfw_error_callback(int error, const char* description)
 #include "latex/latex.h"
 
 #include <chrono>
-//#include <filesystem>
+#include <filesystem>
 #include <fstream>
 
 #ifdef USE_CLING
@@ -41,6 +41,9 @@ int main(int argc, char **argv) {
 
 #ifdef USE_CLING
     cling::Interpreter interp(argc, argv);
+#else
+    (void)argc;
+    (void)argv;
 #endif
 
     // Setup window
@@ -139,6 +142,7 @@ int main(int argc, char **argv) {
     //io.Fonts->AddFontDefault();
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     ImFont *fira_sans = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 16.0f*dpi_scale);
+    (void)fira_sans; // We don't use this font, it's the default
 
     ImFontConfig config;
     config.MergeMode = true;

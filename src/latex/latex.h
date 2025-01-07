@@ -12,7 +12,7 @@ namespace Latex {
      *
      * @return std::string error message if failed
      */
-    std::string init(const std::string& family = "XITS");
+    std::string init();
 
 
     /**
