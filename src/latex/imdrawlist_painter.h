@@ -60,7 +60,6 @@ namespace microtex {
         ~ImDrawList_Painter();
 
         ImVec2 getImageDimensions() { return m_dimensions; }
-        unsigned char* getImageData() { return nullptr; }
 
         virtual void setColor(color c) override;
         virtual color getColor() const override;

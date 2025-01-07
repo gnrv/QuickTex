@@ -266,22 +266,11 @@ namespace Latex {
         return was_animating;
     }
 
-    bool LatexImage::render(ImVec2 scale, ImVec2 inner_padding, bool animate) {
-        m_painter.start(ImVec2(ceil(m_render->getWidth()), ceil(m_render->getHeight())), scale, inner_padding);
-        bool animating = distributeCallListFadeIn(m_graphics.getCallList(), &m_painter, animate);
-        m_painter.finish();
-        auto data = m_painter.getImageData();
-        if (data != nullptr)
-            m_image->setImage(data, m_painter.getImageDimensions().x, m_painter.getImageDimensions().y, Image::FILTER_BILINEAR);
-        return animating;
-    }
-
     LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color) {
         if (!is_initialized) {
             m_latex_error_msg = "LateX has not been initialized";
             return;
         }
-        m_image = std::make_shared<Image>();
         using namespace microtex;
         try {
             std::locale::global(std::locale(""));
@@ -306,17 +295,11 @@ namespace Latex {
             m_latex_error_msg = e.what();
         }
     }
+
     LatexImage::~LatexImage() {
         if (m_render != nullptr) {
             delete m_render;
         }
-    }
-
-    std::shared_ptr<Image> LatexImage::getImage() {
-        if (m_painter.getImageData() != nullptr)
-            return m_image;
-        else
-            return nullptr;
     }
 
     ImVec2 LatexImage::getDimensions() {
@@ -326,13 +309,13 @@ namespace Latex {
             return ImVec2(0, 0);
     }
 
-    void LatexImage::forgetImage() {
-        m_image->reset();
-    }
-
-    bool LatexImage::redraw(ImVec2 scale, ImVec2 inner_padding, bool animate) {
-        if (m_latex_error_msg.empty())
-            return render(scale, inner_padding, animate);
+    bool LatexImage::render(ImVec2 scale, ImVec2 inner_padding, bool animate) {
+        if (m_latex_error_msg.empty()) {
+            m_painter.start(ImVec2(ceil(m_render->getWidth()), ceil(m_render->getHeight())), scale, inner_padding);
+            bool animating = distributeCallListFadeIn(m_graphics.getCallList(), &m_painter, animate);
+            m_painter.finish();
+            return animating;
+        }
 
         return false;
     }

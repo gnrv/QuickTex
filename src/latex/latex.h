@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "core/image.h"
 #include "imdrawlist_painter.h"
 
 namespace Latex {
@@ -33,7 +32,6 @@ namespace Latex {
     private:
         microtex::Render* m_render = nullptr;
         microtex::Graphics2D_abstract m_graphics;
-        std::shared_ptr<Image> m_image;
         microtex::ImDrawList_Painter m_painter;
         float m_ascent;
         float m_descent;
@@ -41,7 +39,6 @@ namespace Latex {
 
         std::string m_latex_error_msg;
 
-        bool render(ImVec2 scale, ImVec2 inner_padding, bool animate);
     public:
         /**brief Create a Latex Image
          *
@@ -54,16 +51,6 @@ namespace Latex {
         LatexImage(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK);
 
         ~LatexImage();
-
-        /**
-         * @brief Returns the generated image
-         *
-         * Could be empty if forgetImage has been called or
-         * if an latex error has occured
-         *
-         * @return const Image&
-         */
-        std::shared_ptr<Image> getImage();
 
         /**
          * @brief Returns the dimensions of the latex image
@@ -84,20 +71,13 @@ namespace Latex {
         float getDescent() { return m_descent; }
 
         /**
-         * @brief Removes from memory the generated image
-         * getImage will return an empty image
-         *
-         */
-        void forgetImage();
-
-        /**
          * @brief Redraws the parsed latex into an image
          * getImage will return a valid image (if no latex error occured)
          *
          * @param scale rescale the image (in x and y)
          * @param inner_padding horizontal and vertical inner padding (will be scaled)
          */
-        bool redraw(ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f), bool animate = false);
+        bool render(ImVec2 scale = ImVec2(1.f, 1.f), ImVec2 inner_padding = ImVec2(20.f, 20.f), bool animate = false);
     };
 
     using LatexImagePtr = std::shared_ptr<LatexImage>;
