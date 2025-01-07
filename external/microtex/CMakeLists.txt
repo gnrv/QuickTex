@@ -19,4 +19,4 @@ target_include_directories(microtex-imgui PUBLIC .)
 target_include_directories(microtex-imgui PUBLIC ../imgui/imgui)
 target_include_directories(microtex-imgui PUBLIC ../MicroTeX/lib)
 
-target_link_libraries(microtex-imgui PUBLIC Imgui microtex)
+target_link_libraries(microtex-imgui PUBLIC imgui microtex)

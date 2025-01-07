@@ -114,7 +114,7 @@ if(USE_CLING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
 endif()
 
-set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz Imgui GL glfw)
+set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw)
 #target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${LIB_LINK})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)

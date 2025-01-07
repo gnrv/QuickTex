@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 
 # Set project name
-project (Imgui LANGUAGES CXX)
+project (imgui LANGUAGES CXX)
 
 # Set the source files to a list
 set(
@@ -30,10 +30,10 @@ set(
 
 
 # Create executable file as project name
-add_library(Imgui ${source_list})
+add_library(imgui ${source_list})
 
 # If using IMGUI_ENABLE_STB_TRUETYPE
 # find_package(Freetype REQUIRED)
-# target_link_libraries(Imgui Freetype::Freetype)
-target_compile_definitions(Imgui PUBLIC IMGUI_USE_WCHAR32)
-target_include_directories(Imgui PUBLIC "${PROJECT_SOURCE_DIR}/imgui")
+# target_link_libraries(imgui Freetype::Freetype)
+target_compile_definitions(imgui PUBLIC IMGUI_USE_WCHAR32)
+target_include_directories(imgui PUBLIC "${PROJECT_SOURCE_DIR}/imgui")
