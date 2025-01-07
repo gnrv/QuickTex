@@ -44,13 +44,6 @@ include_directories(external/IconFontCppHeaders)
 include_directories(external/stb_image)
 
 # ----
-# Clip
-# ----
-set(CLIP_EXAMPLES OFF CACHE BOOL "Compile clip examples")
-set(CLIP_TESTS OFF CACHE BOOL "Compile clip tests")
-add_subdirectory(external/clip)
-
-# ----
 # GLAD
 # ----
 #add_subdirectory(external/glad)
@@ -121,10 +114,9 @@ if(USE_CLING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
 endif()
 
-set(LIB_LINK microtex-imgui clip rapidfuzz::rapidfuzz Imgui GL glfw)
+set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz Imgui GL glfw)
 #target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${LIB_LINK})
-target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/clip)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 
 # Copy the data (such as fonts) in build directory
