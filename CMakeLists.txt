@@ -44,11 +44,6 @@ include_directories(external/IconFontCppHeaders)
 include_directories(external/stb_image)
 
 # ----
-# GLAD
-# ----
-#add_subdirectory(external/glad)
-
-# ----
 # GLFW
 # ----
 find_package(glfw3 REQUIRED)
