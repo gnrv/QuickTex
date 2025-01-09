@@ -5,6 +5,10 @@
         "C": "${workspaceFolder}/external/root-project/cling-build/bin/clang",
         "CXX": "${workspaceFolder}/external/root-project/cling-build/bin/clang++"
       },
-      "isTrusted": true
+      "isTrusted": true,
+      "cmakeSettings": {
+        "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=mold",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=mold"
+      }
     }
 ]

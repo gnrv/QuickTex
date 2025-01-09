@@ -66,6 +66,11 @@ if(USE_CLING)
     find_package(Cling REQUIRED CONFIG NO_DEFAULT_PATH)
     message(STATUS "Found Cling ${Cling_PACKAGE_VERSION}")
     message(STATUS "Using ClingConfig.cmake in: ${Cling_DIR}")
+
+    # See if we can improve gdb start times
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gsplit-dwarf")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -Wl,--gdb-index")
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -Wl,--gdb-index")
 endif()
 
 # Sources of program
