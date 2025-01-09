@@ -30,7 +30,7 @@ set(
 
 
 # Create executable file as project name
-add_library(imgui ${source_list})
+add_library(imgui SHARED ${source_list})
 
 # If using IMGUI_ENABLE_STB_TRUETYPE
 # find_package(Freetype REQUIRED)

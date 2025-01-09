@@ -27,7 +27,10 @@ static void glfw_error_callback(int error, const char* description)
 #include <fstream>
 
 #ifdef USE_CLING
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/FrontendActions.h"
 #include "cling/Interpreter/Interpreter.h"
+#include "cling/MetaProcessor/InputValidator.h"
 #endif
 
 #include "system/sys_util.h"
@@ -41,6 +44,31 @@ int main(int argc, char **argv) {
 
 #ifdef USE_CLING
     cling::Interpreter interp(argc, argv);
+
+    // The interpreter has so much internal state going on in order to support incremental parsing,
+    // I dont' dare to use it for syntax checking even. Let's create another interpreter for that.
+    // We need to pass -fsyntax-only to the compiler.
+    // std::vector<const char*> syntax_argv = {argv[0], "-fsyntax-only"};
+    // cling::Interpreter syntax(argc, syntax_argv.data());
+
+    // auto result = interp.loadLibrary("libimgui.so");
+    // if (result != cling::Interpreter::kSuccess) {
+    //     std::cerr << "Failed to load imgui library: " << result << std::endl;
+    //     exit(1);
+    // }
+    // Add the imgui source directory to the include path
+    interp.AddIncludePath("../external/imgui/imgui");
+    //syntax.AddIncludePath("../external/imgui/imgui");
+    // Pre-include it
+    auto result = interp.loadHeader("imgui.h");
+    if (result != cling::Interpreter::kSuccess) {
+        std::cerr << "Failed to load imgui header: " << result << std::endl;
+        exit(1);
+    }
+    //syntax.loadHeader("imgui.h");
+
+    // Tell cling to allow re-definitions
+    interp.getRuntimeOptions().AllowRedefinition = true;
 #else
     (void)argc;
     (void)argv;
@@ -183,6 +211,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
     editor.SetLanguageDefinition(lang);
     editor.SetImGuiChildIgnored(true);
 
+    bool editor_text_cromulent = true;
 #if 0
     static const char* fileToEdit = "../src/main.cpp";
     {
@@ -194,7 +223,10 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         }
     }
 #else
-    //editor.SetText("ImGui::Text(\"Hello, world!\");");
+    editor.SetText("ImGui::Text(\"Hello, world!\");");
+
+    // Extract the text into an C++ function and compile it
+#if 0
     // Bug with hole punching and background color
     editor.SetText(R"(
 \newcolumntype{s}{>{\color{#1234B6}}c}
@@ -216,6 +248,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
   \hline
 \end{array}
 )");
+#endif
 #endif
 
     // Main loop
@@ -319,6 +352,22 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
         ImGui::PopFont();
         ImGui::End();
+
+        static bool first = true;
+        if (first || editor.IsTextChanged()) {
+            // clang::SyntaxOnlyAction action;
+            // // if (action.BeginSourceFile(syntax.getCI(), syntax.getCI()->getFrontendOpts())) {
+            // //     action.Execute();
+            // //     action.EndSourceFile();
+            // // }
+            // editor_text_cromulent = syntax.getCI()->ExecuteAction(action);
+            // auto result = syntax.process(editor.GetText());
+            // editor_text_cromulent = result == cling::Interpreter::kSuccess;
+            cling::InputValidator validator;
+            auto result = validator.validate(editor.GetText());
+            editor_text_cromulent = result == cling::InputValidator::kComplete;
+            first = false;
+        }
 #endif // CODE WINDOW
 
         // 2. Presentation window
@@ -370,11 +419,24 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 255));
+            // if (i == 0) {
+            //     if (latex_image->getLatexErrorMsg().empty()) {
+            //         animate_latex = latex_image->render(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
+            //     } else {
+            //         ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
+            //     }
+            // }
             if (i == 0) {
-                if (latex_image->getLatexErrorMsg().empty()) {
-                    animate_latex = latex_image->render(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
-                } else {
-                    ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
+                static bool wait_for_new_text = false;
+                if (wait_for_new_text && editor.IsTextChanged()) {
+                    wait_for_new_text = false;
+                }
+                if (editor_text_cromulent && !wait_for_new_text) {
+                    auto result = interp.process(editor.GetText());
+                    if (result != cling::Interpreter::kSuccess) {
+                        // Don't spam whatever error there is, wait for new text
+                        wait_for_new_text = true;
+                    }
                 }
             }
 

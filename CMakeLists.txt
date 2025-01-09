@@ -93,7 +93,7 @@ add_library(${PROJECT_NAME}_lib
 
 # Main program executable
 if(USE_CLING)
-    set(LIBS clingInterpreter)
+    set(LIBS clingInterpreter clingMetaProcessor clingUtils)
 else()
     set(LIBS "")
 endif()
@@ -112,6 +112,9 @@ if(USE_CLING)
     target_include_directories(${PROJECT_NAME} PUBLIC ${CLANG_INCLUDE_DIRS})
     target_include_directories(${PROJECT_NAME} PUBLIC ${CLING_INCLUDE_DIRS})
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
+
+    # Cling JITted code needs to be able to resolve symbols from its own executable
+    set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 1)
 endif()
 
 set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw)
