@@ -1,5 +1,6 @@
 #include "imdrawlist_painter.h"
 
+#include <algorithm>
 #include <iostream>
 
 #define DEBUG 0
