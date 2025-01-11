@@ -114,7 +114,8 @@ if(USE_CLING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CLING=1)
 
     # Cling JITted code needs to be able to resolve symbols from its own executable
-    set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 1)
+    # OR we can turn off value printing in cling
+    #set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 1)
 endif()
 
 set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw)

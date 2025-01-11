@@ -432,7 +432,10 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                     wait_for_new_text = false;
                 }
                 if (editor_text_cromulent && !wait_for_new_text) {
-                    auto result = interp.process(editor.GetText());
+                    // If we disable value printing, we don't have to export symbols from the executable
+                    // to shared libraries.
+                    constexpr bool disableValuePrinting = true;
+                    auto result = interp.process(editor.GetText(), nullptr, nullptr, disableValuePrinting);
                     if (result != cling::Interpreter::kSuccess) {
                         // Don't spam whatever error there is, wait for new text
                         wait_for_new_text = true;
