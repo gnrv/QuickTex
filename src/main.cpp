@@ -353,6 +353,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImGui::PopFont();
         ImGui::End();
 
+#ifdef USE_CLING
         static bool first = true;
         if (first || editor.IsTextChanged()) {
             // clang::SyntaxOnlyAction action;
@@ -368,6 +369,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             editor_text_cromulent = result == cling::InputValidator::kComplete;
             first = false;
         }
+#endif // USE_CLING
 #endif // CODE WINDOW
 
         // 2. Presentation window
@@ -426,6 +428,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             //         ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
             //     }
             // }
+#ifdef USE_CLING
             if (i == 0) {
                 static bool wait_for_new_text = false;
                 if (wait_for_new_text && editor.IsTextChanged()) {
@@ -442,6 +445,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                     }
                 }
             }
+#endif
 
             ImGui::EndChild();
             ImGui::PopID();
