@@ -401,7 +401,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             slide_effective_font_size = slide_scale*slide_font_size*dpi_scale;
             latex_image = std::make_unique<Latex::LatexImage>(
                 latex, slide_effective_font_size,
-                7.f,
+                slide_size.x, 7.f,
                 ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
             animate_latex = true;
         }

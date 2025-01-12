@@ -48,7 +48,7 @@ namespace Latex {
          * @param scale rescale the image (in x and y)
          * @param inner_padding horizontal and vertical inner padding (will be scaled)
          */
-        LatexImage(const std::string& latex_src, float font_size = 18.f, float line_space = 7.f, microtex::color text_color = microtex::BLACK);
+        LatexImage(const std::string& latex_src, float font_size = 18.f, float width = 0, float line_space = 7.f, microtex::color text_color = microtex::BLACK);
 
         ~LatexImage();
 

@@ -266,7 +266,9 @@ namespace Latex {
         return was_animating;
     }
 
-    LatexImage::LatexImage(const std::string& latex_src, float font_size, float line_space, microtex::color text_color) {
+    LatexImage::LatexImage(const std::string& latex_src,
+                           float font_size, float width, float line_space,
+                           microtex::color text_color) {
         if (!is_initialized) {
             m_latex_error_msg = "LateX has not been initialized";
             return;
@@ -278,7 +280,7 @@ namespace Latex {
 
             m_render = MicroTeX::parse(
                 latex_src,
-                0, font_size, line_space, text_color,
+                width, font_size, line_space, text_color,
                 true,
                 OverrideTeXStyle(true, TexStyle::display),
                 font_name_math
