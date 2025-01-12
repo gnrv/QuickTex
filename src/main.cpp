@@ -408,17 +408,26 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             animate_latex = true;
         }
 
+        // Before all the slides, the "setup" placeholder
+        // Calculate the height of one row of ImGui::Text
+        float text_height = ImGui::GetTextLineHeightWithSpacing();
+        ImGui::BeginChild("Setup", ImVec2(slide_size.x, slide_size.y/2 - text_height), false);
+        ImGui::EndChild();
         for (int i = 0; i < 10; i++) {
             ImGui::PushID(i);
-            ImGui::BeginChild("Slide", slide_size, false);
-            auto top_left = ImGui::GetCursorScreenPos();
             ImGui::Text("Slide %d", i);
             ImGui::SameLine();
-            ImGui::SetCursorPosX(slide_size.x - ImGui::CalcTextSize(ICON_MDI_REFRESH).x - ImGui::GetStyle().FramePadding.x * 2);
+            ImGui::SetCursorPosX(slide_size.x - ImGui::GetStyle().FramePadding.x * 2 -
+                                 ImGui::CalcTextSize(ICON_MDI_REFRESH).x -
+                                 ImGui::CalcTextSize(ICON_MDI_PENCIL).x);
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            ImGui::Button(ICON_MDI_PENCIL);
+            ImGui::SameLine();
             if (ImGui::Button(ICON_MDI_REFRESH))
                 animate_latex = true;
             ImGui::PopStyleColor(1);
+            auto top_left = ImGui::GetCursorScreenPos();
+            ImGui::BeginChild("Slide", slide_size, false);
             // The problem here is that the drawlist uses window coordinates.
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
@@ -448,12 +457,17 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                 }
             }
 #endif
-
             ImGui::EndChild();
+            ImGui::Text(""); // Just add some space for symmetry
             ImGui::PopID();
         }
-        ImGui::PopStyleVar(5);
+
+        // Add a spacer to allow the last slide to be scrolled into view and centered vertically
+        ImGui::BeginChild("Final Spacer", ImVec2(slide_size.x, slide_size.y/2 - text_height), false);
+        ImGui::EndChild();
+
         ImGui::End();
+        ImGui::PopStyleVar(5);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
