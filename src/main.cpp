@@ -399,6 +399,8 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             latex = editor.GetText();
             // TODO: An option is to render at high resolution and then scale down the quad we render the texture on.
             slide_effective_font_size = slide_scale*slide_font_size*dpi_scale;
+            // TODO: When creating ImGui::Latex(), use the g.CurrentWindow->DC.TextWrapPos to figure out the width
+            //       to break lines at, rather than slide_size.x
             latex_image = std::make_unique<Latex::LatexImage>(
                 latex, slide_effective_font_size,
                 slide_size.x, 7.f,
