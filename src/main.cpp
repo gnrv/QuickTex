@@ -431,7 +431,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             // The problem here is that the drawlist uses window coordinates.
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
-            ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 255));
+            ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
             // if (i == 0) {
             //     if (latex_image->getLatexErrorMsg().empty()) {
             //         animate_latex = latex_image->render(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
