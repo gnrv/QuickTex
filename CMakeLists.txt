@@ -74,16 +74,13 @@ if(USE_CLING)
 endif()
 
 # Sources of program
-include_directories(src)
+include_directories(src src/latex)
 file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     src/system/*.cpp
     src/search/*.cpp
-    src/chars/drawable_char.cpp
-    src/chars/*.cpp
     src/latex/*.cpp
-    src/fonts/*.cpp
     src/core/*.cpp
-    src/window/*.cpp
+    src/imgui_scale.cpp
 )
 
 # Making a library without the main, for the tests and the program

@@ -8,6 +8,10 @@
 #include "IconsMaterialDesignIcons.h"
 
 #include "TextEditor.h"
+#include "imgui_latex.h"
+#include "imgui_scale.h"
+
+static float f_adjust = 0.0f;
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -19,8 +23,6 @@ static void glfw_error_callback(int error, const char* description)
 #include <chrono>
 #include <iostream>
 #include <exception>
-
-#include "latex/latex.h"
 
 #include <chrono>
 #include <filesystem>
@@ -39,8 +41,6 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
-
-    std::string err = Latex::init();
 
 #ifdef USE_CLING
     cling::Interpreter interp(argc, argv);
@@ -141,6 +141,7 @@ int main(int argc, char **argv) {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImGui::InitLatex();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -191,20 +192,15 @@ int main(int argc, char **argv) {
     //ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
 
     // Set up some math in microTex
-    std::string latex{ R"(\begin{gather}
+    const char *latex = R"(\begin{gather}
 \gamma_\mu\gamma_\nu+\gamma_\nu\gamma_\mu=2\eta_{\mu\nu}\\
 \mathbf{\sigma}_i = \gamma_i \gamma_0\\
 \nabla\psi I\mathbf{\sigma}_3=m\psi\gamma_0\\
 i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
-\end{gather})" };
+\end{gather})";
 
     float slide_font_size = 32.f; // px
     float slide_effective_font_size = 0;
-    auto latex_image = std::make_unique<Latex::LatexImage>(
-        latex, slide_effective_font_size, 0,
-        7.f,
-        ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
-    bool animate_latex = true;
 
     TextEditor editor;
     auto lang = TextEditor::LanguageDefinition::CPlusPlus();
@@ -394,20 +390,6 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImVec2 slide_size{ width/2, width/2*10/16 };
         float slide_scale = slide_size.y / 1080.f;
 
-        // Re-render the latex image if effective font size changed
-        if (slide_effective_font_size != slide_scale*slide_font_size*dpi_scale || editor.IsTextChanged()) {
-            //latex = editor.GetText();
-            // TODO: An option is to render at high resolution and then scale down the quad we render the texture on.
-            slide_effective_font_size = slide_scale*slide_font_size*dpi_scale;
-            // TODO: When creating ImGui::Latex(), use the g.CurrentWindow->DC.TextWrapPos to figure out the width
-            //       to break lines at, rather than slide_size.x
-            latex_image = std::make_unique<Latex::LatexImage>(
-                latex, slide_effective_font_size,
-                slide_size.x, 7.f,
-                ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
-            animate_latex = true;
-        }
-
         // Before all the slides, the "setup" placeholder
         // Calculate the height of one row of ImGui::Text
         float text_height = ImGui::GetTextLineHeightWithSpacing();
@@ -423,22 +405,22 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             ImGui::Button(ICON_MDI_PENCIL);
             ImGui::SameLine();
-            if (ImGui::Button(ICON_MDI_REFRESH))
-                animate_latex = true;
+            bool animate_latex =
+            ImGui::Button(ICON_MDI_REFRESH);
             ImGui::PopStyleColor(1);
+
             auto top_left = ImGui::GetCursorScreenPos();
             ImGui::BeginChild("Slide", slide_size, false);
+
+            ImGui::PushScale(slide_scale);
+
             // The problem here is that the drawlist uses window coordinates.
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
-            // if (i == 0) {
-            //     if (latex_image->getLatexErrorMsg().empty()) {
-            //         animate_latex = latex_image->render(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), animate_latex);
-            //     } else {
-            //         ImGui::Text("%s", latex_image->getLatexErrorMsg().c_str());
-            //     }
-            // }
+            if (i == 0) {
+                ImGui::Latex(latex, animate_latex ? ImGuiLatexFlags_Animate : ImGuiLatexFlags_None);
+            }
 #ifdef USE_CLING
             if (i == 0) {
                 static bool wait_for_new_text = false;
@@ -457,6 +439,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                 }
             }
 #endif
+            ImGui::PopScale();
             ImGui::EndChild();
             ImGui::Text(""); // Just add some space for symmetry
             ImGui::PopID();
@@ -475,7 +458,6 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float f = 0.0f;
             static int counter = 0;
 
             ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
@@ -484,7 +466,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::SliderFloat("float", &f_adjust, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
             if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
