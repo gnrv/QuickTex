@@ -179,6 +179,8 @@ int main(int argc, char **argv) {
     static const ImWchar icon_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
     io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f*dpi_scale, &config, icon_ranges);
 
+    ImFont *fira_sans_big = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 32.0f*dpi_scale);
+
     ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f*dpi_scale);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
@@ -411,7 +413,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
             auto top_left = ImGui::GetCursorScreenPos();
             ImGui::BeginChild("Slide", slide_size, false);
-
+            ImGui::PushFont(fira_sans_big);
             ImGui::PushScale(slide_scale);
 
             // The problem here is that the drawlist uses window coordinates.
@@ -420,6 +422,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
             if (i == 0) {
                 ImGui::Latex(latex, animate_latex ? ImGuiLatexFlags_Animate : ImGuiLatexFlags_None);
+                ImGui::Text("Wazzup?");
             }
 #ifdef USE_CLING
             if (i == 0) {
@@ -439,6 +442,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                 }
             }
 #endif
+            ImGui::PopFont();
             ImGui::PopScale();
             ImGui::EndChild();
             ImGui::Text(""); // Just add some space for symmetry

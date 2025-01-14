@@ -306,14 +306,14 @@ namespace Latex {
 
     ImVec2 LatexImage::getDimensions() {
         if (m_latex_error_msg.empty())
-            return m_painter.getImageDimensions();
+            return ImVec2(ceil(m_render->getWidth()), ceil(m_render->getHeight()));
         else
             return ImVec2(0, 0);
     }
 
     bool LatexImage::render(ImVec2 scale, ImVec2 inner_padding, bool animate) {
         if (m_latex_error_msg.empty()) {
-            m_painter.start(ImVec2(ceil(m_render->getWidth()), ceil(m_render->getHeight())), scale, inner_padding);
+            m_painter.start(getDimensions(), scale, inner_padding);
             bool animating = distributeCallListFadeIn(m_graphics.getCallList(), &m_painter, animate);
             m_painter.finish();
             return animating;

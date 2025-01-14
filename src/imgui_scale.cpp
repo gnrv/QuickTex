@@ -70,6 +70,7 @@ static ImVector<ImScaleData> g_ScaleDataStack;
 void ImGui::PushScale(float scale) {
     g_ScaleDataStack.push_back(ImScaleData(g_ScaleData.Scale));
     ImGui::GetStyle().ScaleAllSizes(scale);
+    ImGui::SetWindowFontScale(scale);
     g_ScaleData.Scale = scale;
 }
 
@@ -106,5 +107,6 @@ void ImGui::PopScale() {
     s.DisplaySafeAreaPadding = scaleData.DisplaySafeAreaPadding;
     s.MouseCursorScale = scaleData.MouseCursorScale;
     g_ScaleData.Scale = scaleData.Scale;
+    ImGui::SetWindowFontScale(scaleData.Scale);
     g_ScaleDataStack.pop_back();
 }

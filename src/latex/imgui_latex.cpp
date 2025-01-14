@@ -56,7 +56,14 @@ namespace ImGui {
         }
 
         if (latex->image->getLatexErrorMsg().empty()) {
+            // TODO: We should only render if ItemAdd returns true
             latex->animate = latex->image->render(ImVec2(1.f, 1.f), ImVec2(0.f, 0.f), latex->animate);
+
+            const ImVec2 text_pos(window->DC.CursorPos);
+            const ImVec2 text_size(latex->image->getDimensions());
+            ImRect bb(text_pos, text_pos + text_size);
+            ItemSize(text_size, 0.0f);
+            ItemAdd(bb, 0);
         } else {
             ImGui::Text("%s", latex->image->getLatexErrorMsg().c_str());
         }
