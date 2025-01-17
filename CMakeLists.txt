@@ -120,7 +120,13 @@ if(USE_CLING)
 
     # Cling JITted code needs to be able to resolve symbols from its own executable
     # OR we can turn off value printing in cling
+    # UPDATE: turns out we need some of these symbols just to get a cling::Value out of
+    #         the interpreter
     #set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 1)
+    # We can use a more targeted option that exists in mold (inspired by one in gold)
+    # and use --export-dynamic-symbol=*setValueNoAlloc* to export only the
+    # relevant symbols and avoid conflict with system LLVM used by WSL2 GL drivers
+    target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic-symbol=*setValueNoAlloc*)
 endif()
 
 set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw fmt::fmt)
