@@ -2,6 +2,8 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
+#include "implot.h"
+#include "implot3d.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -10,6 +12,8 @@
 #include "TextEditor.h"
 #include "imgui_latex.h"
 #include "imgui_scale.h"
+
+#include <cmath>
 
 static float f_adjust = 0.0f;
 
@@ -69,6 +73,8 @@ int main(int argc, char **argv) {
 
     // Tell cling to allow re-definitions
     interp.getRuntimeOptions().AllowRedefinition = true;
+
+    bool editor_text_cromulent = true;
 #else
     (void)argc;
     (void)argv;
@@ -141,6 +147,8 @@ int main(int argc, char **argv) {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
+    ImPlot3D::CreateContext();
     ImGui::InitLatex();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
@@ -201,15 +209,11 @@ int main(int argc, char **argv) {
 i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 \end{gather})";
 
-    float slide_font_size = 32.f; // px
-    float slide_effective_font_size = 0;
-
     TextEditor editor;
     auto lang = TextEditor::LanguageDefinition::CPlusPlus();
     editor.SetLanguageDefinition(lang);
     editor.SetImGuiChildIgnored(true);
 
-    bool editor_text_cromulent = true;
 #if 0
     static const char* fileToEdit = "../src/main.cpp";
     {
@@ -379,6 +383,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
         // Transparent scrollbar bg
         // Doesn't work, the scrollbar always affects clip rect and layout
         // if we want an overlaid scroll bar, we need to draw it ourselves
@@ -422,6 +427,30 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
             if (i == 0) {
                 ImGui::Latex(latex, animate_latex ? ImGuiLatexFlags_Animate : ImGuiLatexFlags_None);
+                ImGui::SameLine();
+                ImGui::PushFont(fira_sans);
+                ImPlot3D::PushStyleVar(ImPlot3DStyleVar_LineWeight, 2);
+                static float xs1[1001], ys1[1001], zs1[1001];
+                for (int i = 0; i < 1001; i++) {
+                    xs1[i] = i * 0.001f;
+                    ys1[i] = 0.5f + 0.5f * cosf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
+                    zs1[i] = 0.5f + 0.5f * sinf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
+                }
+                static double xs2[20], ys2[20], zs2[20];
+                for (int i = 0; i < 20; i++) {
+                    xs2[i] = i * 1 / 19.0f;
+                    ys2[i] = xs2[i] * xs2[i];
+                    zs2[i] = xs2[i] * ys2[i];
+                }
+                if (ImPlot3D::BeginPlot("##Line Plots", slide_size * 0.8f, ImPlot3DFlags_NoLegend)) {
+                    ImPlot3D::SetupAxes("x", "y", "z", ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel);
+                    ImPlot3D::PlotLine("f(x)", xs1, ys1, zs1, 1001);
+                    ImPlot3D::SetNextMarkerStyle(ImPlot3DMarker_Circle);
+                    ImPlot3D::PlotLine("g(x)", xs2, ys2, zs2, 20, ImPlot3DLineFlags_Segments);
+                    ImPlot3D::EndPlot();
+                }
+                ImPlot3D::PopStyleVar();
+                ImGui::PopFont();
                 ImGui::Text("Wazzup?");
             }
 #ifdef USE_CLING
@@ -454,6 +483,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImGui::EndChild();
 
         ImGui::End();
+        ImGui::PopStyleColor();
         ImGui::PopStyleVar(5);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
@@ -507,6 +537,8 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImPlot3D::DestroyContext();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
