@@ -66,9 +66,11 @@ int main(int argc, char **argv) {
     interp.AddIncludePath("../external/imgui/imgui");
     interp.AddIncludePath("../external/imgui/implot");
     interp.AddIncludePath("../external/imgui/implot3d");
+    interp.AddIncludePath("../external/microtex/imlatex");
     // Pre-include it
     std::vector<std::string> headers = {
         "imgui.h",
+        "imgui_latex.h",
         "implot.h",
         "implot3d.h",
         "cmath",
@@ -220,14 +222,6 @@ int main(int argc, char **argv) {
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     //ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
-
-    // Set up some math in microTex
-    const char *latex = R"(\begin{gather}
-\gamma_\mu\gamma_\nu+\gamma_\nu\gamma_\mu=2\eta_{\mu\nu}\\
-\mathbf{\sigma}_i = \gamma_i \gamma_0\\
-\nabla\psi I\mathbf{\sigma}_3=m\psi\gamma_0\\
-i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
-\end{gather})";
 
     TextEditor editor;
     auto lang = TextEditor::LanguageDefinition::CPlusPlus();
@@ -454,22 +448,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         // Slides are designed for 1080p, 16:10 aspect ratio
         // TODO: Once ImGui::SetScale is better implemented across imgui and the glfw backend, we can
         //       use a fixed slide_size of 1728x1080 and use ImGui::PushScale() to accomplish this.
-        static ImVec2 prev_slide_size{ 0, 0 };
         ImVec2 slide_size{ width/2, width/2*10/16 };
-#if 0  //def USE_CLING
-        if (slide_size != prev_slide_size) {
-            lastV = cling::Value();
-            // if (lastT)
-            //     interp.unload(*lastT);
-            lastT = nullptr;
-            auto result = interp.process(fmt::format("ImVec2 slide_size({}, {});", slide_size.x, slide_size.y), nullptr, nullptr, true /* disableValuePrinting */);
-            if (result != cling::Interpreter::kSuccess) {
-                std::cerr << "Failed to set slide size: " << result << std::endl;
-            }
-            prev_slide_size = slide_size;
-            force_cling_recompile = true;
-        }
-#endif
         float slide_scale = slide_size.y / 1080.f;
         // Watch out, my PushScale implementation multiplies onto the current DPI scale
         // so we need to divide by that here.
@@ -490,7 +469,6 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             ImGui::Button(ICON_MDI_PENCIL);
             ImGui::SameLine();
-            bool animate_latex =
             ImGui::Button(ICON_MDI_REFRESH);
             ImGui::PopStyleColor(1);
 

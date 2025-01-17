@@ -35,6 +35,9 @@ set(source_list
     implot3d/implot3d.cpp
     implot3d/implot3d_internal.h
     implot3d/implot3d_items.cpp
+
+    extra/imgui_scale.h
+    extra/imgui_scale.cpp
 )
 
 
@@ -46,6 +49,7 @@ add_library(imgui SHARED ${source_list})
 # target_link_libraries(imgui Freetype::Freetype)
 target_compile_definitions(imgui PUBLIC IMGUI_USE_WCHAR32)
 target_include_directories(imgui PUBLIC
+    "${PROJECT_SOURCE_DIR}/extra"
     "${PROJECT_SOURCE_DIR}/imgui"
     "${PROJECT_SOURCE_DIR}/implot"
     "${PROJECT_SOURCE_DIR}/implot3d"

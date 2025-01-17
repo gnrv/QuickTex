@@ -22,12 +22,10 @@ set(INSTALL_DIR "0.1")
 
 # ---- MicroTex ----
 add_subdirectory(external/microtex)
-include_directories(external/microtex)
 
 # ---- ImGui ----
 # ImGui config
 add_subdirectory(external/imgui)
-include_directories(external/imgui/imgui)
 
 # ----- Rapidfuzz ------
 add_subdirectory(external/rapidfuzz-cpp)
@@ -84,9 +82,7 @@ include_directories(src src/latex)
 file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     src/system/*.cpp
     src/search/*.cpp
-    src/latex/*.cpp
     src/core/*.cpp
-    src/imgui_scale.cpp
 )
 
 # Making a library without the main, for the tests and the program
