@@ -187,7 +187,9 @@ int main(int argc, char **argv) {
     static const ImWchar icon_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
     io.Fonts->AddFontFromFileTTF("../data/fonts/material-design-icons/materialdesignicons-webfont.ttf", 16.0f*dpi_scale, &config, icon_ranges);
 
-    ImFont *fira_sans_big = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 32.0f*dpi_scale);
+    // Presentation sizes
+    ImFont *fira_sans_big = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 48.0f*dpi_scale);
+    ImFont *fira_sans_small = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraSans-Regular.ttf", 32.0f*dpi_scale);
 
     ImFont *fira_mono = io.Fonts->AddFontFromFileTTF("../data/fonts/fira/FiraMono-Regular.ttf", 16.0f*dpi_scale);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
@@ -396,6 +398,9 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         // Slides are designed for 1080p, 16:10 aspect ratio
         ImVec2 slide_size{ width/2, width/2*10/16 };
         float slide_scale = slide_size.y / 1080.f;
+        // Watch out, my PushScale implementation multiplies onto the current DPI scale
+        // so we need to divide by that here.
+        slide_scale /= dpi_scale;
 
         // Before all the slides, the "setup" placeholder
         // Calculate the height of one row of ImGui::Text
@@ -428,7 +433,7 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             if (i == 0) {
                 ImGui::Latex(latex, animate_latex ? ImGuiLatexFlags_Animate : ImGuiLatexFlags_None);
                 ImGui::SameLine();
-                ImGui::PushFont(fira_sans);
+                ImGui::PushFont(fira_sans_small);
                 ImPlot3D::PushStyleVar(ImPlot3DStyleVar_LineWeight, 2);
                 static float xs1[1001], ys1[1001], zs1[1001];
                 for (int i = 0; i < 1001; i++) {
@@ -442,7 +447,10 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                     ys2[i] = xs2[i] * xs2[i];
                     zs2[i] = xs2[i] * ys2[i];
                 }
-                if (ImPlot3D::BeginPlot("##Line Plots", slide_size * 0.8f, ImPlot3DFlags_NoLegend)) {
+                float dim = std::min(slide_size.x, slide_size.y);
+                ImVec2 plot_size = ImVec2(dim, dim) * 0.8f;
+                ImGui::SetCursorPos(ImVec2((slide_size.x - plot_size.x) / 2, (slide_size.y - plot_size.y) / 2));
+                if (ImPlot3D::BeginPlot("##Line Plots", plot_size, ImPlot3DFlags_NoLegend)) {
                     ImPlot3D::SetupAxes("x", "y", "z", ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel);
                     ImPlot3D::PlotLine("f(x)", xs1, ys1, zs1, 1001);
                     ImPlot3D::SetNextMarkerStyle(ImPlot3DMarker_Circle);

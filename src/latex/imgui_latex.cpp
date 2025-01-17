@@ -13,7 +13,7 @@ struct ImLatex {
     std::unique_ptr<Latex::LatexImage> image;
     int wrap_pos_x{ 0 };
     bool animate{ false };
-    float scale{ 1.f };
+    float font_size{ 16.f };
 };
 
 namespace ImGui {
@@ -40,13 +40,12 @@ namespace ImGui {
         if (const char* p = strstr(src, "###"))
             src_end = p;
         std::string_view src_view(src, src_end - src);
-        float scale = GetScale();
-        if (latex->src != src_view || latex->wrap_pos_x != wrap_pos_x || latex->scale != g.FontSize * scale) {
-            latex->scale = g.FontSize * scale;
+        if (latex->src != src_view || latex->wrap_pos_x != wrap_pos_x || latex->font_size != g.FontSize) {
+            latex->font_size = g.FontSize;
             latex->src = src_view;
             latex->wrap_pos_x = wrap_pos_x;
             latex->image = std::make_unique<Latex::LatexImage>(
-                latex->src, g.FontSize * scale,
+                latex->src, latex->font_size,
                 wrap_pos_x >= 0 ? wrap_pos_x : 0, 7.f,
                 ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
         }
