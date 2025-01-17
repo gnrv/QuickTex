@@ -136,8 +136,9 @@ int main(int argc, char **argv) {
     printf("Content scale: %f\n", dpi_scale);
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(16*window_height*window_size_scale_factor/10,
-                                          window_height*window_size_scale_factor,
+    ImVec2 window_size{ 16*window_height*window_size_scale_factor/10, window_height*window_size_scale_factor };
+    GLFWwindow* window = glfwCreateWindow(window_size.x,
+                                          window_size.y,
                                           "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
     if (window == NULL)
         return 1;
@@ -255,6 +256,20 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 #endif
 #endif
 
+    auto ToggleFullscreen = [window_size, window](){
+            static int w = window_size.x, h = window_size.y;
+        if (glfwGetWindowMonitor(window)) {
+            glfwSetWindowMonitor(window, nullptr, 100, 100, w, h, 0);
+            glfwSetWindowSize(window, w, h);
+        } else {
+            // Get the size when windowed
+            glfwGetWindowSize(window, &w, &h);
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        };
+    };
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -264,6 +279,18 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         glfwPollEvents();
+
+        // If GLFW reports that key F11 was pressed, toggle fullscreen
+        static bool toggle_fullscreen = false;
+        if (!toggle_fullscreen && glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS) {
+            toggle_fullscreen = true;
+
+            ToggleFullscreen();
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_RELEASE) {
+            toggle_fullscreen = false;
+        }
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -330,11 +357,13 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
 
             if (ImGui::BeginMenu("View"))
             {
-                if (ImGui::MenuItem("Dark palette"))
+                if (ImGui::MenuItem("Full Screen", "F11"))
+                    ToggleFullscreen();
+                if (ImGui::MenuItem("Dark Palette"))
                     editor.SetPalette(TextEditor::GetDarkPalette());
-                if (ImGui::MenuItem("Light palette"))
+                if (ImGui::MenuItem("Light Palette"))
                     editor.SetPalette(TextEditor::GetLightPalette());
-                if (ImGui::MenuItem("Retro blue palette"))
+                if (ImGui::MenuItem("Retro Blue Palette"))
                     editor.SetPalette(TextEditor::GetRetroBluePalette());
                 ImGui::EndMenu();
             }
