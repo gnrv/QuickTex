@@ -12,7 +12,7 @@
 	url = https://github.com/root-project/llvm-project.git
 [submodule "external/root-project/cling"]
 	path = external/root-project/cling
-	url = https://github.com/root-project/cling.git
+	url = https://github.com/gnrv/cling.git
 [submodule "external/imgui/imgui"]
 	path = external/imgui/imgui
 	url = https://github.com/gnrv/imgui-a500-style.git
