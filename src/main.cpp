@@ -27,8 +27,8 @@ static void glfw_error_callback(int error, const char* description)
 #include <chrono>
 #include <iostream>
 #include <exception>
+#include <fmt/format.h>
 
-#include <chrono>
 #include <filesystem>
 #include <fstream>
 
@@ -62,14 +62,24 @@ int main(int argc, char **argv) {
     // }
     // Add the imgui source directory to the include path
     interp.AddIncludePath("../external/imgui/imgui");
-    //syntax.AddIncludePath("../external/imgui/imgui");
+    interp.AddIncludePath("../external/imgui/implot");
+    interp.AddIncludePath("../external/imgui/implot3d");
     // Pre-include it
-    auto result = interp.loadHeader("imgui.h");
-    if (result != cling::Interpreter::kSuccess) {
-        std::cerr << "Failed to load imgui header: " << result << std::endl;
-        exit(1);
+    std::vector<std::string> headers = {
+        "imgui.h",
+        "implot.h",
+        "implot3d.h",
+        "cmath",
+        "algorithm",
+        "iostream"
+    };
+    for (const auto& header : headers) {
+        auto result = interp.loadHeader(header);
+        if (result != cling::Interpreter::kSuccess) {
+            std::cerr << "Failed to load header: " << result << std::endl;
+            exit(1);
+        }
     }
-    //syntax.loadHeader("imgui.h");
 
     // Tell cling to allow re-definitions
     interp.getRuntimeOptions().AllowRedefinition = true;
@@ -217,8 +227,8 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
     editor.SetLanguageDefinition(lang);
     editor.SetImGuiChildIgnored(true);
 
-#if 0
-    static const char* fileToEdit = "../src/main.cpp";
+#if 1
+    static const char* fileToEdit = "../documents/test/slide0.cpp";
     {
         std::ifstream t(fileToEdit);
         if (t.good())
@@ -270,7 +280,13 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         };
     };
 
+    auto slide0 = [](ImVec2 slide_size) {
+        #include "test/slide0.cpp"
+    };
+
     // Main loop
+    cling::Transaction *lastT = nullptr;
+    bool force_cling_recompile = true; // First time, recompile everything
     while (!glfwWindowShouldClose(window))
     {
         // Poll and handle events (inputs, window resize, etc.)
@@ -425,7 +441,21 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImGui::Begin("Presentation", 0, flags);
 
         // Slides are designed for 1080p, 16:10 aspect ratio
+        // TODO: Once ImGui::SetScale is better implemented across imgui and the glfw backend, we can
+        //       use a fixed slide_size of 1728x1080 and use ImGui::PushScale() to accomplish this.
+        static ImVec2 prev_slide_size{ 0, 0 };
         ImVec2 slide_size{ width/2, width/2*10/16 };
+#ifdef USE_CLING
+        if (slide_size != prev_slide_size) {
+            auto result = interp.process(fmt::format("ImVec2 slide_size({}, {});", slide_size.x, slide_size.y), nullptr, nullptr, true /* disableValuePrinting */);
+            if (result != cling::Interpreter::kSuccess) {
+                std::cerr << "Failed to set slide size: " << result << std::endl;
+            }
+            prev_slide_size = slide_size;
+            lastT = nullptr; // TODO: Should we interp.unload() it?
+            force_cling_recompile = true;
+        }
+#endif
         float slide_scale = slide_size.y / 1080.f;
         // Watch out, my PushScale implementation multiplies onto the current DPI scale
         // so we need to divide by that here.
@@ -459,53 +489,23 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
-            if (i == 0) {
-                ImGui::Latex(latex, animate_latex ? ImGuiLatexFlags_Animate : ImGuiLatexFlags_None);
-                ImGui::SameLine();
-                ImGui::PushFont(fira_sans_small);
-                ImPlot3D::PushStyleVar(ImPlot3DStyleVar_LineWeight, 2);
-                static float xs1[1001], ys1[1001], zs1[1001];
-                for (int i = 0; i < 1001; i++) {
-                    xs1[i] = i * 0.001f;
-                    ys1[i] = 0.5f + 0.5f * cosf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-                    zs1[i] = 0.5f + 0.5f * sinf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-                }
-                static double xs2[20], ys2[20], zs2[20];
-                for (int i = 0; i < 20; i++) {
-                    xs2[i] = i * 1 / 19.0f;
-                    ys2[i] = xs2[i] * xs2[i];
-                    zs2[i] = xs2[i] * ys2[i];
-                }
-                float dim = std::min(slide_size.x, slide_size.y);
-                ImVec2 plot_size = ImVec2(dim, dim) * 0.8f;
-                ImGui::SetCursorPos(ImVec2((slide_size.x - plot_size.x) / 2, (slide_size.y - plot_size.y) / 2));
-                if (ImPlot3D::BeginPlot("##Line Plots", plot_size, ImPlot3DFlags_NoLegend)) {
-                    ImPlot3D::SetupAxes("x", "y", "z", ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel, ImPlot3DAxisFlags_NoLabel);
-                    ImPlot3D::PlotLine("f(x)", xs1, ys1, zs1, 1001);
-                    ImPlot3D::SetNextMarkerStyle(ImPlot3DMarker_Circle);
-                    ImPlot3D::PlotLine("g(x)", xs2, ys2, zs2, 20, ImPlot3DLineFlags_Segments);
-                    ImPlot3D::EndPlot();
-                }
-                ImPlot3D::PopStyleVar();
-                ImGui::PopFont();
-                ImGui::Text("Wazzup?");
-            }
 #ifdef USE_CLING
             if (i == 0) {
-                static bool wait_for_new_text = false;
-                if (wait_for_new_text && editor.IsTextChanged()) {
-                    wait_for_new_text = false;
-                }
-                if (editor_text_cromulent && !wait_for_new_text) {
+                if (editor_text_cromulent && (editor.IsTextChanged() || force_cling_recompile)) {
                     // If we disable value printing, we don't have to export symbols from the executable
                     // to shared libraries.
-                    constexpr bool disableValuePrinting = true;
-                    auto result = interp.process(editor.GetText(), nullptr, nullptr, disableValuePrinting);
+                    auto result = interp.process(editor.GetText(), nullptr, &lastT, true /* disableValuePrinting */);
                     if (result != cling::Interpreter::kSuccess) {
-                        // Don't spam whatever error there is, wait for new text
-                        wait_for_new_text = true;
+                        lastT = nullptr; // Should be done by cling, but just in case
                     }
+                    force_cling_recompile = false;
+                } else if (lastT) {
+                    interp.reevaluate(lastT);
                 }
+            }
+#else
+            if (i == 0) {
+                slide0(slide_size);
             }
 #endif
             ImGui::PopFont();

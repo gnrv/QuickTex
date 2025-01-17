@@ -48,6 +48,12 @@ include_directories(external/stb_image)
 # ----
 find_package(glfw3 REQUIRED)
 
+# ---
+# fmt
+# ---
+find_package(fmt REQUIRED)
+include_directories(${fmt_INCLUDE_DIRS})
+
 # -----
 # CLING
 # -----
@@ -94,6 +100,8 @@ if(USE_CLING)
 else()
     set(LIBS "")
 endif()
+# (TODO: Only if we're not using Cling) Add "documents" to the include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/documents)
 
 add_executable(${PROJECT_NAME}
 src/main.cpp
@@ -115,7 +123,7 @@ if(USE_CLING)
     #set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 1)
 endif()
 
-set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw)
+set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw fmt::fmt)
 #target_link_libraries(${PROJECT_NAME}_lib PUBLIC someObjs)
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${LIB_LINK})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
