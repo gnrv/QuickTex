@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
         "implot.h",
         "implot3d.h",
         "cmath",
+        "cstdio",
         "algorithm",
         "iostream"
     };
@@ -280,9 +281,11 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         };
     };
 
+#ifndef USE_CLING
     auto slide0 = [](ImVec2 slide_size) {
         #include "test/slide0.cpp"
     };
+#endif
 
     // Main loop
     cling::Transaction *lastT = nullptr;
@@ -447,12 +450,14 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
         ImVec2 slide_size{ width/2, width/2*10/16 };
 #ifdef USE_CLING
         if (slide_size != prev_slide_size) {
+            if (lastT)
+                interp.unload(*lastT);
+            lastT = nullptr;
             auto result = interp.process(fmt::format("ImVec2 slide_size({}, {});", slide_size.x, slide_size.y), nullptr, nullptr, true /* disableValuePrinting */);
             if (result != cling::Interpreter::kSuccess) {
                 std::cerr << "Failed to set slide size: " << result << std::endl;
             }
             prev_slide_size = slide_size;
-            lastT = nullptr; // TODO: Should we interp.unload() it?
             force_cling_recompile = true;
         }
 #endif
@@ -494,6 +499,9 @@ i\hat{\gamma}_\mu \frac{\partial}{\partial x^{\mu}} |\psi\rangle = m|\psi\rangle
                 if (editor_text_cromulent && (editor.IsTextChanged() || force_cling_recompile)) {
                     // If we disable value printing, we don't have to export symbols from the executable
                     // to shared libraries.
+                    if (lastT)
+                        interp.unload(*lastT);
+                    lastT = nullptr;
                     auto result = interp.process(editor.GetText(), nullptr, &lastT, true /* disableValuePrinting */);
                     if (result != cling::Interpreter::kSuccess) {
                         lastT = nullptr; // Should be done by cling, but just in case
