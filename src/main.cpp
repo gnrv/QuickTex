@@ -232,8 +232,7 @@ int main(int argc, char **argv) {
     static const char* fileToEdit = "../documents/test/slide0.cpp";
     {
         std::ifstream t(fileToEdit);
-        if (t.good())
-        {
+        if (t.good()) {
             std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
             editor.SetText(str);
         }
@@ -292,8 +291,7 @@ int main(int argc, char **argv) {
 #endif
 
     // Main loop
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -329,24 +327,30 @@ int main(int argc, char **argv) {
 
         // 1. Code window
 #if ENABLE_CODE_WINDOW
+        static bool editor_dirty = false;
+        auto Save = [&editor](){
+            std::ofstream t(fileToEdit);
+            if (t.good())
+                t << editor.GetText();
+            if (t.good())
+                editor_dirty = false;
+            else
+                ImGui::OpenPopup("Save Failed");
+        };
+
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::Begin("Code", 0, flags | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::MenuItem("Save"))
-                {
-                    auto textToSave = editor.GetText();
-                    /// save text....
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Save")) {
+                    Save();
                 }
                 if (ImGui::MenuItem("Quit", "Alt-F4"))
                     break;
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Edit"))
-            {
+            if (ImGui::BeginMenu("Edit")) {
                 bool ro = editor.IsReadOnly();
                 if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
                     editor.SetReadOnly(ro);
@@ -376,8 +380,7 @@ int main(int argc, char **argv) {
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("View"))
-            {
+            if (ImGui::BeginMenu("View")) {
                 if (ImGui::MenuItem("Full Screen", "F11"))
                     ToggleFullscreen();
                 if (ImGui::MenuItem("Dark Palette"))
@@ -389,6 +392,35 @@ int main(int argc, char **argv) {
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
+        }
+
+        if (ImGui::BeginTabBar("MyTabBar")) {
+            std::string label_and_id{ fileToEdit };
+            // If the editor is dirty, add a bullet to the tab label
+            if (editor_dirty)
+                label_and_id += " \xE2\x80\xA2";
+            label_and_id += "###slide0";
+
+            if (ImGui::BeginTabItem(label_and_id.c_str()))
+                ImGui::EndTabItem();
+            ImGui::EndTabBar();
+        }
+
+        // TextEditor actions
+        auto shift = io.KeyShift;
+        auto ctrl = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+        auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
+
+        if (ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_S)) {
+            Save();
+        }
+
+        // TextEditor dialogs
+        if (ImGui::BeginPopupModal("Save Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Failed to open file for writing: %s", fileToEdit);
+            if (ImGui::Button("OK"))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
         }
 
         ImGui::PushFont(fira_mono);
@@ -403,6 +435,8 @@ int main(int argc, char **argv) {
 #endif
 
         editor.Render("TextEditor");
+        if (editor.IsTextChanged())
+            editor_dirty = true;
 
         ImGui::PopFont();
         ImGui::End();
