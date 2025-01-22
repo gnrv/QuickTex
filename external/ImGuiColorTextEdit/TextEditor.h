@@ -185,6 +185,8 @@ public:
 	TextEditor();
 	~TextEditor();
 
+	void ResetBlink();
+
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
 	const LanguageDefinition& GetLanguageDefinition() const { return mLanguageDefinition; }
 
@@ -271,9 +273,14 @@ private:
 
 	struct EditorState
 	{
+	private:
+		Coordinates mCursorPosition;
+	public:
 		Coordinates mSelectionStart;
 		Coordinates mSelectionEnd;
-		Coordinates mCursorPosition;
+		Coordinates CursorPosition() const { return mCursorPosition; }
+		Coordinates GetCursorPosition() const { return mCursorPosition; }
+		Coordinates &CursorPosition();
 	};
 
 	class UndoRecord
@@ -383,7 +390,7 @@ private:
 	ImVec2 mCharAdvance;
 	Coordinates mInteractiveStart, mInteractiveEnd;
 	std::string mLineBuffer;
-	uint64_t mStartTime;
+	double mStartTime;
 
 	float mLastClick;
 };

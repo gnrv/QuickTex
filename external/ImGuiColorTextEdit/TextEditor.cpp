@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <chrono>
 #include <string>
 #include <regex>
 #include <cmath>
@@ -11,6 +10,8 @@
 
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
+
+static TextEditor *g_CurrentTextEditor = nullptr;
 
 template<class InputIt1, class InputIt2, class BinaryPredicate>
 bool equals(InputIt1 first1, InputIt1 last1,
@@ -46,9 +47,10 @@ TextEditor::TextEditor()
 	, mIgnoreImGuiChild(false)
 	, mShowWhitespaces(true)
 	, mCheckComments(true)
-	, mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+	, mStartTime(ImGui::GetTime() * 1000)
 	, mLastClick(-1.0f)
 {
+	g_CurrentTextEditor = this;
 	SetPalette(GetDarkPalette());
 	SetLanguageDefinition(LanguageDefinition::HLSL());
 	mLines.push_back(Line());
@@ -113,7 +115,7 @@ std::string TextEditor::GetText(const Coordinates & aStart, const Coordinates & 
 
 TextEditor::Coordinates TextEditor::GetActualCursorCoordinates() const
 {
-	return SanitizeCoordinates(mState.mCursorPosition);
+	return SanitizeCoordinates(mState.GetCursorPosition());
 }
 
 TextEditor::Coordinates TextEditor::SanitizeCoordinates(const Coordinates & aValue) const
@@ -799,7 +801,7 @@ void TextEditor::HandleMouseInputs()
 			{
 				if (!ctrl)
 				{
-					mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+					mState.CursorPosition() = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
 					mSelectionMode = SelectionMode::Line;
 					SetSelection(mInteractiveStart, mInteractiveEnd, mSelectionMode);
 				}
@@ -815,7 +817,7 @@ void TextEditor::HandleMouseInputs()
 			{
 				if (!ctrl)
 				{
-					mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+					mState.CursorPosition() = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
 					if (mSelectionMode == SelectionMode::Line)
 						mSelectionMode = SelectionMode::Normal;
 					else
@@ -831,7 +833,7 @@ void TextEditor::HandleMouseInputs()
 			*/
 			else if (click)
 			{
-				mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+				mState.CursorPosition() = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
 				if (ctrl)
 					mSelectionMode = SelectionMode::Word;
 				else
@@ -844,7 +846,7 @@ void TextEditor::HandleMouseInputs()
 			else if (ImGui::IsMouseDragging(0) && ImGui::IsMouseDown(0))
 			{
 				io.WantCaptureMouse = true;
-				mState.mCursorPosition = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+				mState.CursorPosition() = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
 				SetSelection(mInteractiveStart, mInteractiveEnd, mSelectionMode);
 			}
 		}
@@ -961,7 +963,7 @@ void TextEditor::Render()
 			auto lineNoWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x;
 			drawList->AddText(ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y), mPalette[(int)PaletteIndex::LineNumber], buf);
 
-			if (mState.mCursorPosition.mLine == lineNo)
+			if (mState.GetCursorPosition().mLine == lineNo)
 			{
 				auto focused = ImGui::IsWindowFocused();
 
@@ -976,13 +978,13 @@ void TextEditor::Render()
 				// Render the cursor
 				if (focused)
 				{
-					auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					auto timeEnd = 1000 * ImGui::GetTime();
 					auto elapsed = timeEnd - mStartTime;
-					if (elapsed > 400)
+					if (elapsed < 400)
 					{
 						float width = 1.0f;
-						auto cindex = GetCharacterIndex(mState.mCursorPosition);
-						float cx = TextDistanceToLineStart(mState.mCursorPosition);
+						auto cindex = GetCharacterIndex(mState.GetCursorPosition());
+						float cx = TextDistanceToLineStart(mState.GetCursorPosition());
 
 						if (mOverwrite && cindex < (int)line.size())
 						{
@@ -1003,9 +1005,9 @@ void TextEditor::Render()
 						ImVec2 cstart(textScreenPos.x + cx, lineStartScreenPos.y);
 						ImVec2 cend(textScreenPos.x + cx + width, lineStartScreenPos.y + mCharAdvance.y);
 						drawList->AddRectFilled(cstart, cend, mPalette[(int)PaletteIndex::Cursor]);
-						if (elapsed > 800)
-							mStartTime = timeEnd;
 					}
+					if (elapsed > 800)
+						mStartTime = timeEnd;
 				}
 			}
 
@@ -1353,7 +1355,7 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 			{
 				auto d = UTF8CharLength(line[cindex].mChar);
 
-				u.mRemovedStart = mState.mCursorPosition;
+				u.mRemovedStart = mState.GetCursorPosition();
 				u.mRemovedEnd = Coordinates(coord.mLine, GetCharacterColumn(coord.mLine, cindex + d));
 
 				while (d-- > 0 && cindex < (int)line.size())
@@ -1396,9 +1398,9 @@ void TextEditor::SetColorizerEnable(bool aValue)
 
 void TextEditor::SetCursorPosition(const Coordinates & aPosition)
 {
-	if (mState.mCursorPosition != aPosition)
+	if (mState.GetCursorPosition() != aPosition)
 	{
-		mState.mCursorPosition = aPosition;
+		mState.CursorPosition() = aPosition;
 		mCursorPositionChanged = true;
 		EnsureCursorVisible();
 	}
@@ -1498,24 +1500,24 @@ void TextEditor::DeleteSelection()
 
 void TextEditor::MoveUp(int aAmount, bool aSelect)
 {
-	auto oldPos = mState.mCursorPosition;
-	mState.mCursorPosition.mLine = std::max(0, mState.mCursorPosition.mLine - aAmount);
-	if (oldPos != mState.mCursorPosition)
+	auto oldPos = mState.GetCursorPosition();
+	mState.CursorPosition().mLine = std::max(0, mState.GetCursorPosition().mLine - aAmount);
+	if (oldPos != mState.GetCursorPosition())
 	{
 		if (aSelect)
 		{
 			if (oldPos == mInteractiveStart)
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 			else if (oldPos == mInteractiveEnd)
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			else
 			{
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 				mInteractiveEnd = oldPos;
 			}
 		}
 		else
-			mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 		SetSelection(mInteractiveStart, mInteractiveEnd);
 
 		EnsureCursorVisible();
@@ -1524,26 +1526,26 @@ void TextEditor::MoveUp(int aAmount, bool aSelect)
 
 void TextEditor::MoveDown(int aAmount, bool aSelect)
 {
-	IM_ASSERT(mState.mCursorPosition.mColumn >= 0);
-	auto oldPos = mState.mCursorPosition;
-	mState.mCursorPosition.mLine = std::max(0, std::min((int)mLines.size() - 1, mState.mCursorPosition.mLine + aAmount));
+	IM_ASSERT(mState.GetCursorPosition().mColumn >= 0);
+	auto oldPos = mState.GetCursorPosition();
+	mState.CursorPosition().mLine = std::max(0, std::min((int)mLines.size() - 1, mState.GetCursorPosition().mLine + aAmount));
 
-	if (mState.mCursorPosition != oldPos)
+	if (mState.GetCursorPosition() != oldPos)
 	{
 		if (aSelect)
 		{
 			if (oldPos == mInteractiveEnd)
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			else if (oldPos == mInteractiveStart)
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 			else
 			{
 				mInteractiveStart = oldPos;
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			}
 		}
 		else
-			mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 		SetSelection(mInteractiveStart, mInteractiveEnd);
 
 		EnsureCursorVisible();
@@ -1560,10 +1562,10 @@ void TextEditor::MoveLeft(int aAmount, bool aSelect, bool aWordMode)
 	if (mLines.empty())
 		return;
 
-	auto oldPos = mState.mCursorPosition;
-	mState.mCursorPosition = GetActualCursorCoordinates();
-	auto line = mState.mCursorPosition.mLine;
-	auto cindex = GetCharacterIndex(mState.mCursorPosition);
+	auto oldPos = mState.GetCursorPosition();
+	mState.CursorPosition() = GetActualCursorCoordinates();
+	auto line = mState.GetCursorPosition().mLine;
+	auto cindex = GetCharacterIndex(mState.GetCursorPosition());
 
 	while (aAmount-- > 0)
 	{
@@ -1591,31 +1593,31 @@ void TextEditor::MoveLeft(int aAmount, bool aSelect, bool aWordMode)
 			}
 		}
 
-		mState.mCursorPosition = Coordinates(line, GetCharacterColumn(line, cindex));
+		mState.CursorPosition() = Coordinates(line, GetCharacterColumn(line, cindex));
 		if (aWordMode)
 		{
-			mState.mCursorPosition = FindWordStart(mState.mCursorPosition);
-			cindex = GetCharacterIndex(mState.mCursorPosition);
+			mState.CursorPosition() = FindWordStart(mState.GetCursorPosition());
+			cindex = GetCharacterIndex(mState.GetCursorPosition());
 		}
 	}
 
-	mState.mCursorPosition = Coordinates(line, GetCharacterColumn(line, cindex));
+	mState.CursorPosition() = Coordinates(line, GetCharacterColumn(line, cindex));
 
-	IM_ASSERT(mState.mCursorPosition.mColumn >= 0);
+	IM_ASSERT(mState.CursorPosition().mColumn >= 0);
 	if (aSelect)
 	{
 		if (oldPos == mInteractiveStart)
-			mInteractiveStart = mState.mCursorPosition;
+			mInteractiveStart = mState.GetCursorPosition();
 		else if (oldPos == mInteractiveEnd)
-			mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveEnd = mState.GetCursorPosition();
 		else
 		{
-			mInteractiveStart = mState.mCursorPosition;
+			mInteractiveStart = mState.GetCursorPosition();
 			mInteractiveEnd = oldPos;
 		}
 	}
 	else
-		mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+		mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 	SetSelection(mInteractiveStart, mInteractiveEnd, aSelect && aWordMode ? SelectionMode::Word : SelectionMode::Normal);
 
 	EnsureCursorVisible();
@@ -1623,23 +1625,23 @@ void TextEditor::MoveLeft(int aAmount, bool aSelect, bool aWordMode)
 
 void TextEditor::MoveRight(int aAmount, bool aSelect, bool aWordMode)
 {
-	auto oldPos = mState.mCursorPosition;
+	auto oldPos = mState.GetCursorPosition();
 
 	if (mLines.empty() || oldPos.mLine >= (int)mLines.size())
 		return;
 
-	auto cindex = GetCharacterIndex(mState.mCursorPosition);
+	auto cindex = GetCharacterIndex(mState.GetCursorPosition());
 	while (aAmount-- > 0)
 	{
-		auto lindex = mState.mCursorPosition.mLine;
+		auto lindex = mState.GetCursorPosition().mLine;
 		auto& line = mLines[lindex];
 
 		if (cindex >= (int)line.size())
 		{
-			if (mState.mCursorPosition.mLine < (int)mLines.size() - 1)
+			if (mState.GetCursorPosition().mLine < (int)mLines.size() - 1)
 			{
-				mState.mCursorPosition.mLine = std::max(0, std::min((int)mLines.size() - 1, mState.mCursorPosition.mLine + 1));
-				mState.mCursorPosition.mColumn = 0;
+				mState.CursorPosition().mLine = std::max(0, std::min((int)mLines.size() - 1, mState.GetCursorPosition().mLine + 1));
+				mState.CursorPosition().mColumn = 0;
 			}
 			else
 				return;
@@ -1647,26 +1649,26 @@ void TextEditor::MoveRight(int aAmount, bool aSelect, bool aWordMode)
 		else
 		{
 			cindex += UTF8CharLength(line[cindex].mChar);
-			mState.mCursorPosition = Coordinates(lindex, GetCharacterColumn(lindex, cindex));
+			mState.CursorPosition() = Coordinates(lindex, GetCharacterColumn(lindex, cindex));
 			if (aWordMode)
-				mState.mCursorPosition = FindNextWord(mState.mCursorPosition);
+				mState.CursorPosition() = FindNextWord(mState.GetCursorPosition());
 		}
 	}
 
 	if (aSelect)
 	{
 		if (oldPos == mInteractiveEnd)
-			mInteractiveEnd = SanitizeCoordinates(mState.mCursorPosition);
+			mInteractiveEnd = SanitizeCoordinates(mState.GetCursorPosition());
 		else if (oldPos == mInteractiveStart)
-			mInteractiveStart = mState.mCursorPosition;
+			mInteractiveStart = mState.GetCursorPosition();
 		else
 		{
 			mInteractiveStart = oldPos;
-			mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveEnd = mState.GetCursorPosition();
 		}
 	}
 	else
-		mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+		mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 	SetSelection(mInteractiveStart, mInteractiveEnd, aSelect && aWordMode ? SelectionMode::Word : SelectionMode::Normal);
 
 	EnsureCursorVisible();
@@ -1674,18 +1676,18 @@ void TextEditor::MoveRight(int aAmount, bool aSelect, bool aWordMode)
 
 void TextEditor::MoveTop(bool aSelect)
 {
-	auto oldPos = mState.mCursorPosition;
+	auto oldPos = mState.GetCursorPosition();
 	SetCursorPosition(Coordinates(0, 0));
 
-	if (mState.mCursorPosition != oldPos)
+	if (mState.GetCursorPosition() != oldPos)
 	{
 		if (aSelect)
 		{
 			mInteractiveEnd = oldPos;
-			mInteractiveStart = mState.mCursorPosition;
+			mInteractiveStart = mState.GetCursorPosition();
 		}
 		else
-			mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 		SetSelection(mInteractiveStart, mInteractiveEnd);
 	}
 }
@@ -1707,50 +1709,50 @@ void TextEditor::TextEditor::MoveBottom(bool aSelect)
 
 void TextEditor::MoveHome(bool aSelect)
 {
-	auto oldPos = mState.mCursorPosition;
-	SetCursorPosition(Coordinates(mState.mCursorPosition.mLine, 0));
+	auto oldPos = mState.GetCursorPosition();
+	SetCursorPosition(Coordinates(mState.GetCursorPosition().mLine, 0));
 
-	if (mState.mCursorPosition != oldPos)
+	if (mState.GetCursorPosition() != oldPos)
 	{
 		if (aSelect)
 		{
 			if (oldPos == mInteractiveStart)
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 			else if (oldPos == mInteractiveEnd)
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			else
 			{
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 				mInteractiveEnd = oldPos;
 			}
 		}
 		else
-			mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 		SetSelection(mInteractiveStart, mInteractiveEnd);
 	}
 }
 
 void TextEditor::MoveEnd(bool aSelect)
 {
-	auto oldPos = mState.mCursorPosition;
-	SetCursorPosition(Coordinates(mState.mCursorPosition.mLine, GetLineMaxColumn(oldPos.mLine)));
+	auto oldPos = mState.GetCursorPosition();
+	SetCursorPosition(Coordinates(mState.GetCursorPosition().mLine, GetLineMaxColumn(oldPos.mLine)));
 
-	if (mState.mCursorPosition != oldPos)
+	if (mState.GetCursorPosition() != oldPos)
 	{
 		if (aSelect)
 		{
 			if (oldPos == mInteractiveEnd)
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			else if (oldPos == mInteractiveStart)
-				mInteractiveStart = mState.mCursorPosition;
+				mInteractiveStart = mState.GetCursorPosition();
 			else
 			{
 				mInteractiveStart = oldPos;
-				mInteractiveEnd = mState.mCursorPosition;
+				mInteractiveEnd = mState.GetCursorPosition();
 			}
 		}
 		else
-			mInteractiveStart = mInteractiveEnd = mState.mCursorPosition;
+			mInteractiveStart = mInteractiveEnd = mState.GetCursorPosition();
 		SetSelection(mInteractiveStart, mInteractiveEnd);
 	}
 }
@@ -1836,32 +1838,32 @@ void TextEditor::Backspace()
 		auto pos = GetActualCursorCoordinates();
 		SetCursorPosition(pos);
 
-		if (mState.mCursorPosition.mColumn == 0)
+		if (mState.GetCursorPosition().mColumn == 0)
 		{
-			if (mState.mCursorPosition.mLine == 0)
+			if (mState.GetCursorPosition().mLine == 0)
 				return;
 
 			u.mRemoved = '\n';
 			u.mRemovedStart = u.mRemovedEnd = Coordinates(pos.mLine - 1, GetLineMaxColumn(pos.mLine - 1));
 			Advance(u.mRemovedEnd);
 
-			auto& line = mLines[mState.mCursorPosition.mLine];
-			auto& prevLine = mLines[mState.mCursorPosition.mLine - 1];
-			auto prevSize = GetLineMaxColumn(mState.mCursorPosition.mLine - 1);
+			auto& line = mLines[mState.GetCursorPosition().mLine];
+			auto& prevLine = mLines[mState.GetCursorPosition().mLine - 1];
+			auto prevSize = GetLineMaxColumn(mState.GetCursorPosition().mLine - 1);
 			prevLine.insert(prevLine.end(), line.begin(), line.end());
 
 			ErrorMarkers etmp;
 			for (auto& i : mErrorMarkers)
-				etmp.insert(ErrorMarkers::value_type(i.first - 1 == mState.mCursorPosition.mLine ? i.first - 1 : i.first, i.second));
+				etmp.insert(ErrorMarkers::value_type(i.first - 1 == mState.GetCursorPosition().mLine ? i.first - 1 : i.first, i.second));
 			mErrorMarkers = std::move(etmp);
 
-			RemoveLine(mState.mCursorPosition.mLine);
-			--mState.mCursorPosition.mLine;
-			mState.mCursorPosition.mColumn = prevSize;
+			RemoveLine(mState.GetCursorPosition().mLine);
+			--mState.CursorPosition().mLine;
+			mState.CursorPosition().mColumn = prevSize;
 		}
 		else
 		{
-			auto& line = mLines[mState.mCursorPosition.mLine];
+			auto& line = mLines[mState.GetCursorPosition().mLine];
 			auto cindex = GetCharacterIndex(pos) - 1;
 			auto cend = cindex + 1;
 			while (cindex > 0 && IsUTFSequence(line[cindex].mChar))
@@ -1872,7 +1874,7 @@ void TextEditor::Backspace()
 
 			u.mRemovedStart = u.mRemovedEnd = GetActualCursorCoordinates();
 			--u.mRemovedStart.mColumn;
-			--mState.mCursorPosition.mColumn;
+			--mState.CursorPosition().mColumn;
 
 			while (cindex < (int)line.size() && cend-- > cindex)
 			{
@@ -1884,7 +1886,7 @@ void TextEditor::Backspace()
 		mTextChanged = true;
 
 		EnsureCursorVisible();
-		Colorize(mState.mCursorPosition.mLine, 1);
+		Colorize(mState.GetCursorPosition().mLine, 1);
 	}
 
 	u.mAfter = mState;
@@ -2121,10 +2123,10 @@ std::string TextEditor::GetSelectedText() const
 
 std::string TextEditor::GetCurrentLineText()const
 {
-	auto lineLength = GetLineMaxColumn(mState.mCursorPosition.mLine);
+	auto lineLength = GetLineMaxColumn(mState.GetCursorPosition().mLine);
 	return GetText(
-		Coordinates(mState.mCursorPosition.mLine, 0),
-		Coordinates(mState.mCursorPosition.mLine, lineLength));
+		Coordinates(mState.GetCursorPosition().mLine, 0),
+		Coordinates(mState.GetCursorPosition().mLine, lineLength));
 }
 
 void TextEditor::ProcessInputs()
@@ -3157,4 +3159,16 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Lua()
 		inited = true;
 	}
 	return langDef;
+}
+
+void TextEditor::ResetBlink()
+{
+    mStartTime = 1000 * ImGui::GetTime();
+}
+
+
+TextEditor::Coordinates &TextEditor::EditorState::CursorPosition()
+{
+    g_CurrentTextEditor->ResetBlink();
+    return mCursorPosition;
 }
