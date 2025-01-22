@@ -10,6 +10,8 @@
 
 #include "IconsMaterialDesignIcons.h"
 
+#include "Presentation.h"
+#include "Slide.h"
 #include "TextEditor.h"
 #include "imgui_latex.h"
 #include "imgui_scale.h"
@@ -42,8 +44,6 @@ static void glfw_error_callback(int error, const char* description)
 #endif
 
 #include "system/sys_util.h"
-
-#define ENABLE_CODE_WINDOW 1
 
 int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
@@ -88,8 +88,6 @@ int main(int argc, char **argv) {
 
     // Tell cling to allow re-definitions
     interp.getRuntimeOptions().AllowRedefinition = true;
-
-    bool editor_text_cromulent = true;
 #else
     (void)argc;
     (void)argv;
@@ -167,7 +165,8 @@ int main(int argc, char **argv) {
     ImPlot3D::CreateContext();
     ImGui::InitLatex();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    // NavEnableKeyboard messes with TextEditor
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
@@ -223,48 +222,12 @@ int main(int argc, char **argv) {
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     //ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);
 
-    TextEditor editor;
-    auto lang = TextEditor::LanguageDefinition::CPlusPlus();
-    editor.SetLanguageDefinition(lang);
-    editor.SetImGuiChildIgnored(true);
-
-#if 1
-    static const char* fileToEdit = "../documents/test/slide0.cpp";
-    {
-        std::ifstream t(fileToEdit);
-        if (t.good()) {
-            std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-            editor.SetText(str);
-        }
+    Presentation presentation("../documents/test");
+    std::map<std::string, TextEditor> editors;
+    editors["setup"].SetText(presentation.setup.text());
+    for (int i = 0; i < presentation.slides.size(); i++) {
+        editors[fmt::format("slide{}", i)].SetText(presentation.slides[i].text());
     }
-#else
-    editor.SetText("ImGui::Text(\"Hello, world!\");");
-
-    // Extract the text into an C++ function and compile it
-#if 0
-    // Bug with hole punching and background color
-    editor.SetText(R"(
-\newcolumntype{s}{>{\color{#1234B6}}c}
-\begin{array}{|c|c|c|s|}
-  \hline
-  \rowcolor{Tan}\multicolumn{4}{|c|}{\textcolor{white}{\bold{\text{Table Head}}}}\\
-  \hline
-  \text{Matrix}&\multicolumn{2}{|c|}{\text{Multicolumns}}&\text{Font size commands}\\
-  \hline
-  \begin{pmatrix}
-      \alpha_{11}&\cdots&\alpha_{1n}\\
-      \hdotsfor{3}\\
-      \alpha_{n1}&\cdots&\alpha_{nn}
-  \end{pmatrix}
-  &\large \text{Left}&\cellcolor{#00bde5}\small \textcolor{white}{\text{\bold{Right}}}
-  &\small \text{small Small}\\
-  \hline
-  \multicolumn{4}{|c|}{\text{Table Foot}}\\
-  \hline
-\end{array}
-)");
-#endif
-#endif
 
     auto ToggleFullscreen = [window_size, window](){
             static int w = window_size.x, h = window_size.y;
@@ -280,17 +243,43 @@ int main(int argc, char **argv) {
         };
     };
 
-    void (*slide0)(ImVec2) = nullptr;
-#ifdef USE_CLING
-    cling::Transaction *lastT = nullptr;
-    bool force_cling_recompile = true; // First time, recompile everything
-#else
-    slide0 = [](ImVec2 slide_size) {
+#ifndef USE_CLING
+    presentation.slides[0].function = [](ImVec2 slide_size) {
         #include "test/slide0.cpp"
+    };
+    presentation.slides[1].function = [](ImVec2 slide_size) {
+        #include "test/slide1.cpp"
+    };
+    presentation.slides[2].function = [](ImVec2 slide_size) {
+        #include "test/slide2.cpp"
+    };
+    presentation.slides[3].function = [](ImVec2 slide_size) {
+        #include "test/slide3.cpp"
+    };
+    presentation.slides[4].function = [](ImVec2 slide_size) {
+        #include "test/slide4.cpp"
+    };
+    presentation.slides[5].function = [](ImVec2 slide_size) {
+        #include "test/slide5.cpp"
+    };
+    presentation.slides[6].function = [](ImVec2 slide_size) {
+        #include "test/slide6.cpp"
+    };
+    presentation.slides[7].function = [](ImVec2 slide_size) {
+        #include "test/slide7.cpp"
+    };
+    presentation.slides[8].function = [](ImVec2 slide_size) {
+        #include "test/slide8.cpp"
+    };
+    presentation.slides[9].function = [](ImVec2 slide_size) {
+        #include "test/slide9.cpp"
     };
 #endif
 
     // Main loop
+    std::string activate_tab = "slide0";
+    std::string active_tab = "slide0";
+    std::string exception_what;
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -326,56 +315,50 @@ int main(int argc, char **argv) {
                     ImGuiWindowFlags_NoSavedSettings;
 
         // 1. Code window
-#if ENABLE_CODE_WINDOW
-        static bool editor_dirty = false;
-        auto Save = [&editor](){
-            std::ofstream t(fileToEdit);
-            if (t.good())
-                t << editor.GetText();
-            if (t.good())
-                editor_dirty = false;
-            else
-                ImGui::OpenPopup("Save Failed");
-        };
-
+        TextEditor &active_editor = editors[active_tab];
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::Begin("Code", 0, flags | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Save")) {
-                    Save();
+                    try {
+                        presentation.getSourceFile(active_tab).save();
+                    } catch (std::exception& e) {
+                        exception_what = e.what();
+                        ImGui::OpenPopup("Exception");
+                    }
                 }
                 if (ImGui::MenuItem("Quit", "Alt-F4"))
                     break;
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Edit")) {
-                bool ro = editor.IsReadOnly();
+                bool ro = active_editor.IsReadOnly();
                 if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
-                    editor.SetReadOnly(ro);
+                    active_editor.SetReadOnly(ro);
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Undo", "Ctrl-Z", nullptr, !ro && editor.CanUndo()))
-                    editor.Undo();
-                if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && editor.CanRedo()))
-                    editor.Redo();
+                if (ImGui::MenuItem("Undo", "Ctrl-Z", nullptr, !ro && active_editor.CanUndo()))
+                    active_editor.Undo();
+                if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && active_editor.CanRedo()))
+                    active_editor.Redo();
 
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, editor.HasSelection()))
-                    editor.Copy();
-                if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && editor.HasSelection()))
-                    editor.Cut();
-                if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && editor.HasSelection()))
-                    editor.Delete();
+                if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, active_editor.HasSelection()))
+                    active_editor.Copy();
+                if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && active_editor.HasSelection()))
+                    active_editor.Cut();
+                if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && active_editor.HasSelection()))
+                    active_editor.Delete();
                 if (ImGui::MenuItem("Paste", "Ctrl-V", nullptr, !ro && ImGui::GetClipboardText() != nullptr))
-                    editor.Paste();
+                    active_editor.Paste();
 
                 ImGui::Separator();
 
                 if (ImGui::MenuItem("Select all", nullptr, nullptr))
-                    editor.SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(editor.GetTotalLines(), 0));
+                    active_editor.SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(active_editor.GetTotalLines(), 0));
 
                 ImGui::EndMenu();
             }
@@ -383,26 +366,67 @@ int main(int argc, char **argv) {
             if (ImGui::BeginMenu("View")) {
                 if (ImGui::MenuItem("Full Screen", "F11"))
                     ToggleFullscreen();
-                if (ImGui::MenuItem("Dark Palette"))
-                    editor.SetPalette(TextEditor::GetDarkPalette());
-                if (ImGui::MenuItem("Light Palette"))
-                    editor.SetPalette(TextEditor::GetLightPalette());
-                if (ImGui::MenuItem("Retro Blue Palette"))
-                    editor.SetPalette(TextEditor::GetRetroBluePalette());
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
         }
 
         if (ImGui::BeginTabBar("MyTabBar")) {
-            std::string label_and_id{ fileToEdit };
-            // If the editor is dirty, add a bullet to the tab label
-            if (editor_dirty)
-                label_and_id += " \xE2\x80\xA2";
-            label_and_id += "###slide0";
+            std::string label_and_id = presentation.setup.path.filename().string() + "###setup";
+            ImGuiTabItemFlags flags = 0;
+            if (activate_tab == "setup") {
+                // The tab will not render it contents until the next lap of the loop.
+                flags |= ImGuiTabItemFlags_SetSelected;
+            }
+            if (presentation.setup.dirty)
+                flags |= ImGuiTabItemFlags_UnsavedDocument;
+            if (ImGui::BeginTabItem(label_and_id.c_str(), nullptr, flags)) {
+                active_tab = "setup";
+                if (activate_tab == active_tab)
+                    activate_tab.clear();
+                ImGui::PushFont(fira_mono);
+                auto &editor = editors["setup"];
+                editor.Render("TextEditor");
+                if (editor.IsTextChanged())
+                    try {
+                        presentation.getSourceFile("setup").setText(editor.GetText());
+                    } catch (std::exception& e) {
+                        exception_what = e.what();
+                        ImGui::OpenPopup("Exception");
+                    }
 
-            if (ImGui::BeginTabItem(label_and_id.c_str()))
+                ImGui::PopFont();
                 ImGui::EndTabItem();
+            }
+            for (auto &slide : presentation.slides) {
+                int i = presentation.indexOf(slide);
+                std::string slide_id = fmt::format("slide{}", i);
+                std::string label_and_id = slide.path.filename().string() + "###" + slide_id;
+                ImGuiTabItemFlags flags = 0;
+                if (activate_tab == slide_id) {
+                    flags |= ImGuiTabItemFlags_SetSelected;
+                }
+                if (slide.dirty)
+                    flags |= ImGuiTabItemFlags_UnsavedDocument;
+                if (ImGui::BeginTabItem(label_and_id.c_str(), nullptr, flags)) {
+                    active_tab = slide_id;
+                    if (activate_tab == active_tab)
+                        activate_tab.clear();
+                    ImGui::PushFont(fira_mono);
+                    auto &editor = editors[slide_id];
+                    editor.Render("TextEditor");
+                    if (editor.IsTextChanged())
+                        try {
+                            presentation.getSourceFile(slide_id).setText(editor.GetText());
+                        } catch (std::exception& e) {
+                            exception_what = e.what();
+                            ImGui::OpenPopup("Exception");
+                        }
+
+                    ImGui::PopFont();
+                    ImGui::EndTabItem();
+                }
+            }
             ImGui::EndTabBar();
         }
 
@@ -412,53 +436,22 @@ int main(int argc, char **argv) {
         auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
 
         if (ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_S)) {
-            Save();
+            try {
+                presentation.getSourceFile(active_tab).save();
+            } catch (std::exception& e) {
+                exception_what = e.what();
+                ImGui::OpenPopup("Exception");
+            }
         }
 
         // TextEditor dialogs
         if (ImGui::BeginPopupModal("Save Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Failed to open file for writing: %s", fileToEdit);
+            ImGui::Text("%s", exception_what.c_str());
             if (ImGui::Button("OK"))
                 ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
         }
-
-        ImGui::PushFont(fira_mono);
-
-        // Disable the status bar, it causes scrollview content height to increase
-#if 0
-        auto cpos = editor.GetCursorPosition();
-        ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, editor.GetTotalLines(),
-            editor.IsOverwrite() ? "Ovr" : "Ins",
-            editor.CanUndo() ? "*" : " ",
-            editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
-#endif
-
-        editor.Render("TextEditor");
-        if (editor.IsTextChanged())
-            editor_dirty = true;
-
-        ImGui::PopFont();
         ImGui::End();
-
-#ifdef USE_CLING
-        static bool first = true;
-        if (first || editor.IsTextChanged()) {
-            // clang::SyntaxOnlyAction action;
-            // // if (action.BeginSourceFile(syntax.getCI(), syntax.getCI()->getFrontendOpts())) {
-            // //     action.Execute();
-            // //     action.EndSourceFile();
-            // // }
-            // editor_text_cromulent = syntax.getCI()->ExecuteAction(action);
-            // auto result = syntax.process(editor.GetText());
-            // editor_text_cromulent = result == cling::Interpreter::kSuccess;
-            cling::InputValidator validator;
-            auto result = validator.validate(editor.GetText());
-            editor_text_cromulent = result == cling::InputValidator::kComplete;
-            first = false;
-        }
-#endif // USE_CLING
-#endif // CODE WINDOW
 
         // 2. Presentation window
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
@@ -501,7 +494,9 @@ int main(int argc, char **argv) {
                                  ImGui::CalcTextSize(ICON_MDI_REFRESH).x -
                                  ImGui::CalcTextSize(ICON_MDI_PENCIL).x);
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            ImGui::Button(ICON_MDI_PENCIL);
+            std::string slide_id = fmt::format("slide{}", i);
+            if (ImGui::Button(ICON_MDI_PENCIL))
+                activate_tab = slide_id;
             ImGui::SameLine();
             ImGui::Button(ICON_MDI_REFRESH);
             ImGui::PopStyleColor(1);
@@ -515,38 +510,49 @@ int main(int argc, char **argv) {
             // We need to convert the coordinates to window coordinates.
             // We can do this by using the cursor position.
             ImGui::GetWindowDrawList()->AddRect(top_left, top_left + slide_size, IM_COL32(255, 255, 255, 127));
+            SourceFile &slide_src = presentation.slides[i];
 #ifdef USE_CLING
-            if (i == 0) {
-                if (editor_text_cromulent && (editor.IsTextChanged() || force_cling_recompile)) {
-                    // If we disable value printing, we don't have to export symbols from the executable
-                    // to shared libraries.
-                    cling::Value V;
-                    if (lastT)
-                        interp.unload(*lastT);
-                    lastT = nullptr;
-                    auto result = interp.process("void (*update)(ImVec2 slide_size) = [](ImVec2 slide_size){" + editor.GetText() + "}; update", &V, &lastT, true /* disableValuePrinting */);
-                    if (result != cling::Interpreter::kSuccess) {
-                        lastT = nullptr; // Should be done by cling, but just in case
-                    }
-                    // The value in lastV should be a function that we call to re-render the slide
-                    if (V.isValid()) {
-                        slide0 = reinterpret_cast<void (*)(ImVec2)>(V.getPtr());
-                    } else {
-                        slide0 = nullptr;
-                    }
-                    force_cling_recompile = false;
+            if (!slide_src.validated) {
+                try {
+                    cling::InputValidator validator;
+                    auto result = validator.validate(slide_src.text());
+                    slide_src.setValidated(result == cling::InputValidator::kComplete);
+                } catch (std::exception& e) {
+                    exception_what = e.what();
+                    ImGui::OpenPopup("Exception");
+                }
+            }
+
+            if (slide_src.validated && !slide_src.compiled && !slide_src.syntax_error) {
+                // If we disable value printing, we don't have to export symbols from the executable
+                // to shared libraries.
+                cling::Value V;
+                // if (slide_src.last_transaction)
+                //     interp.unload(*slide_src.last_transaction);
+                slide_src.last_transaction = nullptr;
+                auto result = interp.process("void (*update)(ImVec2 slide_size) = [](ImVec2 slide_size){" + slide_src.text() + "}; update", &V, &slide_src.last_transaction, true /* disableValuePrinting */);
+                slide_src.compiled = true;
+                if (result != cling::Interpreter::kSuccess) {
+                    slide_src.last_transaction = nullptr; // Should be done by cling, but just in case
+                    slide_src.syntax_error = true;
+                } else {
+                    slide_src.syntax_error = false;
+                }
+                // The value in lastV should be a function that we call to re-render the slide
+                if (V.isValid()) {
+                    slide_src.function = reinterpret_cast<void (*)(ImVec2)>(V.getPtr());
+                } else {
+                    slide_src.function = nullptr;
                 }
             }
 #endif
-            if (i == 0) {
-                ImGuiErrorRecoveryState state;
-                ImGui::ErrorRecoveryStoreState(&state);
-                try {
-                    if (slide0) slide0(slide_size);
-                } catch (std::exception& e) {
-                    ImGui::ErrorRecoveryTryToRecoverState(&state);
-                    std::cerr << "Caught exception: " << e.what() << std::endl;
-                }
+            ImGuiErrorRecoveryState state;
+            ImGui::ErrorRecoveryStoreState(&state);
+            try {
+                if (slide_src.function) slide_src.function(slide_size);
+            } catch (std::exception& e) {
+                ImGui::ErrorRecoveryTryToRecoverState(&state);
+                std::cerr << "Caught exception: " << e.what() << std::endl;
             }
             ImGui::PopFont();
             ImGui::PopScale();

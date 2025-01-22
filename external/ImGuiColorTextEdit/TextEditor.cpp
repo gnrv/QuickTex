@@ -51,8 +51,12 @@ TextEditor::TextEditor()
 {
     g_CurrentTextEditor = this;
     SetPalette(GetDarkPalette());
-    SetLanguageDefinition(LanguageDefinition::HLSL());
+    //SetLanguageDefinition(LanguageDefinition::HLSL());
     mLines.push_back(Line());
+
+    auto lang = TextEditor::LanguageDefinition::CPlusPlus();
+    SetLanguageDefinition(lang);
+    SetImGuiChildIgnored(true);
 }
 
 TextEditor::~TextEditor()
