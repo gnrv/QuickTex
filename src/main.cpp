@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
                 // if (slide_src.last_transaction)
                 //     interp.unload(*slide_src.last_transaction);
                 slide_src.last_transaction = nullptr;
-                auto result = interp.process("void (*update)(ImVec2 slide_size) = [](ImVec2 slide_size){" + slide_src.text() + "}; update", &V, &slide_src.last_transaction, true /* disableValuePrinting */);
+                auto result = interp.process("void (*update)(ImVec2 slide_size) = [](ImVec2 slide_size){" + slide_src.text() + ";}; update", &V, &slide_src.last_transaction, true /* disableValuePrinting */);
                 slide_src.compiled = true;
                 if (result != cling::Interpreter::kSuccess) {
                     slide_src.last_transaction = nullptr; // Should be done by cling, but just in case
