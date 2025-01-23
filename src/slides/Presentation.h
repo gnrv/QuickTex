@@ -24,6 +24,7 @@ public:
     bool syntax_error{ false };
     cling::Transaction *last_transaction{ nullptr };
     void (*function)(ImVec2){ nullptr };
+    std::string exception;
 
     SourceFile(std::filesystem::path);
 

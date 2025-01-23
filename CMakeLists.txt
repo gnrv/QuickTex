@@ -123,7 +123,7 @@ if(USE_CLING)
     # We can use a more targeted option that exists in mold (inspired by one in gold)
     # and use --export-dynamic-symbol=*setValueNoAlloc* to export only the
     # relevant symbols and avoid conflict with system LLVM used by WSL2 GL drivers
-    target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic-symbol=*setValueNoAlloc*)
+    target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic-symbol=*setValueNoAlloc*, -Wl,--export-dynamic-symbol=*cling_runtime_internal_throwIfInvalidPointer*)
 endif()
 
 set(LIB_LINK microtex-imgui rapidfuzz::rapidfuzz imgui GL glfw fmt::fmt)

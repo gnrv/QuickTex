@@ -49,7 +49,14 @@ int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
 
 #ifdef USE_CLING
-    cling::Interpreter interp(argc, argv);
+    // Add --ptrcheck to argc, argv
+    std::vector<const char*> new_argv;
+    for (int i = 0; i < argc; ++i) {
+        new_argv.push_back(argv[i]);
+    }
+    new_argv.push_back("--ptrcheck");
+    argc = new_argv.size();
+    cling::Interpreter interp(argc, new_argv.data());
 
     // The interpreter has so much internal state going on in order to support incremental parsing,
     // I dont' dare to use it for syntax checking even. Let's create another interpreter for that.
@@ -389,7 +396,7 @@ int main(int argc, char **argv) {
                 editor.Render("TextEditor");
                 if (editor.IsTextChanged())
                     try {
-                        presentation.getSourceFile("setup").setText(editor.GetText());
+                        presentation.setup.setText(editor.GetText());
                     } catch (std::exception& e) {
                         exception_what = e.what();
                         ImGui::OpenPopup("Exception");
@@ -452,6 +459,26 @@ int main(int argc, char **argv) {
             ImGui::EndPopup();
         }
         ImGui::End();
+
+#ifdef USE_CLING
+        SourceFile &setup = presentation.setup;
+        if (!setup.validated) {
+            try {
+                cling::InputValidator validator;
+                auto result = validator.validate(setup.text());
+                setup.setValidated(result == cling::InputValidator::kComplete);
+            } catch (std::exception& e) {
+                exception_what = e.what();
+                ImGui::OpenPopup("Exception");
+            }
+        }
+
+        if (setup.validated && !setup.compiled && !setup.syntax_error) {
+            auto result = interp.process(setup.text(), nullptr, nullptr, true /* disableValuePrinting */);
+            setup.compiled = true;
+            setup.syntax_error = result != cling::Interpreter::kSuccess;
+        }
+#endif
 
         // 2. Presentation window
         ImGui::SetNextWindowSize(ImVec2(width/2, height));
@@ -552,12 +579,19 @@ int main(int argc, char **argv) {
                 if (slide_src.function) slide_src.function(slide_size);
             } catch (std::exception& e) {
                 ImGui::ErrorRecoveryTryToRecoverState(&state);
-                std::cerr << "Caught exception: " << e.what() << std::endl;
+                slide_src.exception = e.what();
+                //std::cerr << "Script exception in slide " << i << ": " << e.what() << std::endl;
             }
             ImGui::PopFont();
             ImGui::PopScale();
             ImGui::EndChild();
-            ImGui::Text(""); // Just add some space for symmetry
+            if (!slide_src.exception.empty()) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+                ImGui::Text("Exception: %s", slide_src.exception.c_str());
+                ImGui::PopStyleColor();
+            } else {
+                ImGui::Text(""); // Just add some space for symmetry
+            }
             ImGui::PopID();
         }
 
