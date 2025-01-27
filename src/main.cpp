@@ -514,6 +514,7 @@ int main(int argc, char **argv) {
         ImGui::BeginChild("Setup", ImVec2(slide_size.x, slide_size.y/2 - text_height), false);
         ImGui::EndChild();
         for (int i = 0; i < 10; i++) {
+            bool animate = false;
             ImGui::PushID(i);
             ImGui::Text("Slide %d", i);
             ImGui::SameLine();
@@ -525,11 +526,13 @@ int main(int argc, char **argv) {
             if (ImGui::Button(ICON_MDI_PENCIL))
                 activate_tab = slide_id;
             ImGui::SameLine();
-            ImGui::Button(ICON_MDI_REFRESH);
+            if (ImGui::Button(ICON_MDI_REFRESH))
+                animate = true;
             ImGui::PopStyleColor(1);
 
             auto top_left = ImGui::GetCursorScreenPos();
             ImGui::BeginChild("Slide", slide_size, false);
+            ImGui::BeginAnimated(animate);
             ImGui::PushFont(fira_sans_big);
             ImGui::PushScale(slide_scale);
 
@@ -582,8 +585,9 @@ int main(int argc, char **argv) {
                 slide_src.exception = e.what();
                 //std::cerr << "Script exception in slide " << i << ": " << e.what() << std::endl;
             }
-            ImGui::PopFont();
             ImGui::PopScale();
+            ImGui::PopFont();
+            ImGui::EndAnimated();
             ImGui::EndChild();
             if (!slide_src.exception.empty()) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));

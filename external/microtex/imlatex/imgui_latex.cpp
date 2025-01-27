@@ -50,7 +50,7 @@ namespace ImGui {
                 ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Text]));
         }
 
-        if (flags & ImGuiLatexFlags_Animate) {
+        if (g.CurrentItemFlags & ImGuiItemFlags_Animated) {
             latex->animate = true;
         }
 

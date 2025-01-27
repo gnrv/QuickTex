@@ -14,5 +14,4 @@ namespace ImGui {
 enum ImGuiLatexFlags_
 {
     ImGuiLatexFlags_None               = 0,
-    ImGuiLatexFlags_Animate            = 1 << 0,   // Animate the LaTeX rendering
 };
