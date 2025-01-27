@@ -2190,16 +2190,14 @@ void TextEditor::EnsureCursorVisible()
     float scrollY = ImGui::GetScrollY();
 
     ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
-    //auto height = ImGui::GetWindowHeight();
-    //auto width = ImGui::GetWindowWidth();
     auto height = contentRegionAvail.y;
     auto width = contentRegionAvail.x;
 
     auto top = 1 + (int)ceil(scrollY / mCharAdvance.y);
     auto bottom = (int)ceil((scrollY + height) / mCharAdvance.y);
 
-    auto left = (int)ceil(scrollX / mCharAdvance.x);
-    auto right = (int)ceil((scrollX + width) / mCharAdvance.x);
+    auto left = (int)ceil(scrollX);
+    auto right = (int)ceil(scrollX + width);
 
     auto pos = GetActualCursorCoordinates();
     auto len = TextDistanceToLineStart(pos);
