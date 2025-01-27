@@ -56,7 +56,7 @@ TextEditor::TextEditor()
 
     auto lang = TextEditor::LanguageDefinition::CPlusPlus();
     SetLanguageDefinition(lang);
-    SetImGuiChildIgnored(true);
+    //SetImGuiChildIgnored(true);
 }
 
 TextEditor::~TextEditor()
@@ -1037,7 +1037,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPalette[(int)PaletteIndex::Background]));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
     if (!mIgnoreImGuiChild)
-        ImGui::BeginChild(aTitle, aSize, aBorder, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove);
+        ImGui::BeginChild(aTitle, aSize, aBorder ? ImGuiChildFlags_Borders : 0, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove);
 
     if (mHandleKeyboardInputs) {
         HandleKeyboardInputs();
@@ -2189,8 +2189,11 @@ void TextEditor::EnsureCursorVisible()
     float scrollX = ImGui::GetScrollX();
     float scrollY = ImGui::GetScrollY();
 
-    auto height = ImGui::GetWindowHeight();
-    auto width = ImGui::GetWindowWidth();
+    ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+    //auto height = ImGui::GetWindowHeight();
+    //auto width = ImGui::GetWindowWidth();
+    auto height = contentRegionAvail.y;
+    auto width = contentRegionAvail.x;
 
     auto top = 1 + (int)ceil(scrollY / mCharAdvance.y);
     auto bottom = (int)ceil((scrollY + height) / mCharAdvance.y);
