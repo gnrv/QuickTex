@@ -44,6 +44,32 @@ static void glfw_error_callback(int error, const char* description)
 #endif
 
 #include "system/sys_util.h"
+#include "system/stdcapture.h"
+
+void extractMarkers(SourceFile &source_file, const char *buf, size_t size) {
+    source_file.error_markers.clear();
+    std::string buf_str(buf, size);
+    size_t line_no = 0;
+    auto colon_pos = buf_str.find(':');
+    if (colon_pos != std::string::npos) {
+        auto line_str = buf_str.substr(colon_pos + 1);
+        try {
+            line_no = std::stoi(line_str);
+        } catch (const std::invalid_argument& e) {
+            line_no = 0;
+        } catch (const std::out_of_range& e) {
+            line_no = 0;
+        }
+    }
+    // I think cling prepends some extra line to the code being processed
+    if (line_no > 0)
+        line_no -= 1;
+    if (line_no > source_file.lines)
+        line_no = source_file.lines;
+    // For now, strip out the ansi color codes
+    buf_str = std::regex_replace(buf_str, std::regex("\033\\[[0-9;]*m"), "");
+    source_file.error_markers.emplace(line_no, buf_str);
+}
 
 int main(int argc, char **argv) {
     std::filesystem::current_path(getExecutablePath());
@@ -232,7 +258,7 @@ int main(int argc, char **argv) {
     Presentation presentation("../documents/test");
     std::map<std::string, TextEditor> editors;
     editors["setup"].SetText(presentation.setup.text());
-    for (int i = 0; i < presentation.slides.size(); i++) {
+    for (size_t i = 0; i < presentation.slides.size(); i++) {
         editors[fmt::format("slide{}", i)].SetText(presentation.slides[i].text());
     }
 
@@ -400,6 +426,7 @@ int main(int argc, char **argv) {
                     auto &editor = editors["setup"];
                     ImVec2 editor_size = ImGui::GetContentRegionAvail();
                     editor_size.y -= ImGui::GetTextLineHeightWithSpacing();
+                    editor.SetErrorMarkers(presentation.setup.error_markers);
                     editor.Render("TextEditor", editor_size);
                     rendered_editor = &editor;
                     if (editor.IsTextChanged())
@@ -431,11 +458,12 @@ int main(int argc, char **argv) {
                         auto &editor = editors[slide_id];
                         ImVec2 editor_size = ImGui::GetContentRegionAvail();
                         editor_size.y -= ImGui::GetTextLineHeightWithSpacing();
+                        editor.SetErrorMarkers(slide.error_markers);
                         editor.Render("TextEditor", editor_size);
                         rendered_editor = &editor;
                         if (editor.IsTextChanged())
                             try {
-                                presentation.getSourceFile(slide_id).setText(editor.GetText());
+                                slide.setText(editor.GetText());
                             } catch (std::exception& e) {
                                 exception_what = e.what();
                                 ImGui::OpenPopup("Exception");
@@ -492,6 +520,10 @@ int main(int argc, char **argv) {
         }
 
         if (setup.validated && !setup.compiled && !setup.syntax_error) {
+            setup.error_markers.clear();
+            CaptureStderr cap([&](const char* buf, size_t szbuf) {
+                extractMarkers(setup, buf, szbuf);
+            });
             auto result = interp.process(setup.text(), nullptr, nullptr, true /* disableValuePrinting */);
             setup.compiled = true;
             setup.syntax_error = result != cling::Interpreter::kSuccess;
@@ -572,6 +604,11 @@ int main(int argc, char **argv) {
             }
 
             if (slide_src.validated && !slide_src.compiled && !slide_src.syntax_error) {
+                slide_src.error_markers.clear();
+                CaptureStderr cap([&](const char* buf, size_t szbuf) {
+                    extractMarkers(slide_src, buf, szbuf);
+                });
+
                 // If we disable value printing, we don't have to export symbols from the executable
                 // to shared libraries.
                 cling::Value V;

@@ -5,6 +5,7 @@
 #include <cassert>
 #include <filesystem>
 #include <vector>
+#include <map>
 
 #include <fmt/format.h>
 
@@ -25,6 +26,8 @@ public:
     cling::Transaction *last_transaction{ nullptr };
     void (*function)(ImVec2){ nullptr };
     std::string exception;
+    std::map<int, std::string> error_markers;
+    size_t lines{ 0 };
 
     SourceFile(std::filesystem::path);
 

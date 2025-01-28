@@ -33,6 +33,9 @@ void SourceFile::setText(const std::string &source) {
     validated = false;
     compiled = false;
     syntax_error = false;
+
+    // Count lines
+    lines = std::count(src.begin(), src.end(), '\n');
 }
 
 void SourceFile::save() const {
