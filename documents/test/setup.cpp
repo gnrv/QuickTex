@@ -374,8 +374,8 @@ struct RendererMarkersLine : RendererBase {
 
 #define SQRT_3_2 0.86602540378f
 
-static ImVec2 MARKER_FILL_RIGHT[3]    = {ImVec2(1,0), ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, -SQRT_3_2)};
-static ImVec2 MARKER_LINE_RIGHT[6]    = {ImVec2(1,0),  ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(1,0) };
+static ImVec2 MARKER_FILL_RIGHT[3]    = {ImVec2(0,0), ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, -SQRT_3_2)};
+static ImVec2 MARKER_LINE_RIGHT[6]    = {ImVec2(0,0),  ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, -SQRT_3_2), ImVec2(-1.5, -SQRT_3_2), ImVec2(0,0) };
 
 void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
     static bool initialized = false;
@@ -390,18 +390,28 @@ void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flag
     if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
         const ImPlotNextItemData& s = GetItemData();
         if (s.RenderLine) {
+            Transformer2 transformer;
+            ImVec2 start_screen = transformer(start.x, start.y);
+            ImVec2 end_screen = transformer(end.x, end.y);
+            ImVec2 dir_screen = end_screen - start_screen;
+            ImVec2 normalized_dir_screen = dir_screen / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
+            ImVec2 adjusted_end_screen = end_screen - normalized_dir_screen * s.MarkerSize;
+
+            // TODO: We need to inverse transform adjusted_end_screen back to the plot space
+            // to get the actual end point of the vector
+            // For now, just compute normalized_dir
+            ImVec2 dir = end - start;
+            ImVec2 normalized_dir = dir / sqrt(dir.x * dir.x + dir.y * dir.y);
+            float scale = sqrt(dir.x * dir.x + dir.y * dir.y) / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
+
             const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_Line]);
-            VectorGetter getter1(start, end);
+            VectorGetter getter1(start, end - normalized_dir*scale*10);
             RenderPrimitives1<RendererLineSegments1>(getter1,col_line,s.LineWeight);
 
             // Rotate the marker points so they point in the direction of the vector
             ImVec2 fill[3];
             ImVec2 line[6];
             {
-                Transformer2 transformer;
-                ImVec2 start_screen = transformer(start.x, start.y);
-                ImVec2 end_screen = transformer(end.x, end.y);
-                ImVec2 dir_screen = end_screen - start_screen;
                 // Now, dir is expressed in the plot space
                 // We need to use the ImPlot Transform to move to screen coordinates
                 // Watch out, the ImGui coordinate system is flipped on the y axis
