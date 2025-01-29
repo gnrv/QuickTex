@@ -15,9 +15,9 @@ if (ImPlot::BeginPlot("hejz")) {
         // filled markers
         for (int m = 0; m < ImPlotMarker_COUNT; ++m) {
             ImGui::PushID(m);
-            ImPlot::SetNextMarkerStyle(m, mk_size, IMPLOT_AUTO_COL, mk_weight);
-            ImPlot::Vector("Hej", ImVec2(xs[0], ys[0]), ImVec2(xs[1], ys[1]));
-            ImPlot::PlotLine("##Filled", xs, ys, 4);
+            ImPlot::PushStyleVar(ImPlotStyleVar_LineWeight, 3);
+            ImPlot::Vector("Hej", ImVec2(xs[0], ys[0]), ImVec2(xs[0]+2, ys[0]+mk_size), ImPlotItemFlags_NoLegend);
+            ImPlot::PopStyleVar(1);
             ImGui::PopID();
             ys[0]--; ys[1]--;
             ys[2]--; ys[3]--;
@@ -26,13 +26,13 @@ if (ImPlot::BeginPlot("hejz")) {
         // open markers
         for (int m = 0; m < ImPlotMarker_COUNT; ++m) {
             ImGui::PushID(m);
-            ImPlot::SetNextMarkerStyle(m, mk_size, ImVec4(0,0,0,0), mk_weight);
-            ImPlot::PlotLine("##Open", xs, ys, 2);
+            ImPlot::SetNextMarkerStyle(m, mk_size, IMPLOT_AUTO_COL, mk_weight);
+            ImPlot::PlotLine("##Filled", xs, ys, 2);
             ImGui::PopID();
             ys[0]--; ys[1]--;
         }
 
-        ImPlot::PlotText("Filled Markers", 2.5f, 6.0f);
+        ImPlot::PlotText("Vectors", 2.5f, 6.0f);
         ImPlot::PlotText("Open Markers",   7.5f, 6.0f);
 
         ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(1,0,1,1));
