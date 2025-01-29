@@ -1,5 +1,11 @@
+//#include <imga.h>
+
 ImGui::Text("Insehkjhkrt ImPlot Here");
 
+static float mk_size = ImPlot::GetStyle().MarkerSize;
+static float mk_weight = ImPlot::GetStyle().MarkerWeight;
+ImGui::SliderFloat("Size", &mk_size, 0, 10);
+ImGui::SliderFloat("Weight", &mk_weight, 0, 10);
 if (ImPlot::BeginPlot("hejz")) {
         ImPlot::SetupAxesLimits(0, 10, 0, 12);
 
@@ -10,6 +16,7 @@ if (ImPlot::BeginPlot("hejz")) {
         for (int m = 0; m < ImPlotMarker_COUNT; ++m) {
             ImGui::PushID(m);
             ImPlot::SetNextMarkerStyle(m, mk_size, IMPLOT_AUTO_COL, mk_weight);
+            ImPlot::Vector("Hej", ImVec2(xs[0], ys[0]), ImVec2(xs[1], ys[1]));
             ImPlot::PlotLine("##Filled", xs, ys, 4);
             ImGui::PopID();
             ys[0]--; ys[1]--;
@@ -34,3 +41,4 @@ if (ImPlot::BeginPlot("hejz")) {
 
     ImPlot::EndPlot();
 }
+

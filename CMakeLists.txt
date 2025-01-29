@@ -78,7 +78,7 @@ if(USE_CLING)
 endif()
 
 # Sources of program
-include_directories(src src/slides)
+include_directories(src src/slides src/imga)
 file(GLOB source_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     src/core/*.cpp
     src/search/*.cpp

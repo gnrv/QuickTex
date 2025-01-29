@@ -46,6 +46,10 @@ static void glfw_error_callback(int error, const char* description)
 #include "system/sys_util.h"
 #include "system/stdcapture.h"
 
+#ifndef USE_CLING
+#include "test/setup.cpp"
+#endif
+
 void extractMarkers(SourceFile &source_file, const char *buf, size_t size) {
     source_file.error_markers.clear();
     std::string buf_str(buf, size);
@@ -100,6 +104,7 @@ int main(int argc, char **argv) {
     interp.AddIncludePath("../external/imgui/implot");
     interp.AddIncludePath("../external/imgui/implot3d");
     interp.AddIncludePath("../external/microtex/imlatex");
+    interp.AddIncludePath("../src/imga");
     // Pre-include it
     std::vector<std::string> headers = {
         "imgui.h",
@@ -109,7 +114,8 @@ int main(int argc, char **argv) {
         "cmath",
         "cstdio",
         "algorithm",
-        "iostream"
+        "iostream",
+        "imga.h"
     };
     for (const auto& header : headers) {
         auto result = interp.loadHeader(header);
