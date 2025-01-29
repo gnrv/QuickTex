@@ -50,7 +50,7 @@ static void glfw_error_callback(int error, const char* description)
 #include "test/setup.cpp"
 #endif
 
-void extractMarkers(SourceFile &source_file, const char *buf, size_t size) {
+void extractMarkers(SourceFile &source_file, const char *buf, size_t size, size_t offset = 0) {
     source_file.error_markers.clear();
     std::string buf_str(buf, size);
     size_t line_no = 0;
@@ -60,19 +60,21 @@ void extractMarkers(SourceFile &source_file, const char *buf, size_t size) {
         try {
             line_no = std::stoi(line_str);
         } catch (const std::invalid_argument& e) {
-            line_no = 0;
+            line_no = 1;
         } catch (const std::out_of_range& e) {
-            line_no = 0;
+            line_no = 1;
         }
     }
-    // I think cling prepends some extra line to the code being processed
-    if (line_no > 0)
-        line_no -= 1;
-    if (line_no > source_file.lines)
-        line_no = source_file.lines;
+
+    line_no += offset;
+    line_no = std::min(line_no, source_file.lines);
+    line_no = std::max(line_no, size_t(1));
+
     // For now, strip out the ansi color codes
     buf_str = std::regex_replace(buf_str, std::regex("\033\\[[0-9;]*m"), "");
     source_file.error_markers.emplace(line_no, buf_str);
+
+    std::cerr << buf_str << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -284,33 +286,43 @@ int main(int argc, char **argv) {
 
 #ifndef USE_CLING
     presentation.slides[0].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide0.cpp"
     };
     presentation.slides[1].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide1.cpp"
     };
     presentation.slides[2].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide2.cpp"
     };
     presentation.slides[3].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide3.cpp"
     };
     presentation.slides[4].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide4.cpp"
     };
     presentation.slides[5].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide5.cpp"
     };
     presentation.slides[6].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide6.cpp"
     };
     presentation.slides[7].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide7.cpp"
     };
     presentation.slides[8].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide8.cpp"
     };
     presentation.slides[9].function = [](ImVec2 slide_size) {
+        (void)slide_size;
         #include "test/slide9.cpp"
     };
 #endif
@@ -612,7 +624,7 @@ int main(int argc, char **argv) {
             if (slide_src.validated && !slide_src.compiled && !slide_src.syntax_error) {
                 slide_src.error_markers.clear();
                 CaptureStderr cap([&](const char* buf, size_t szbuf) {
-                    extractMarkers(slide_src, buf, szbuf);
+                    extractMarkers(slide_src, buf, szbuf, -1);
                 });
 
                 // If we disable value printing, we don't have to export symbols from the executable

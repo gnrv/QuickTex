@@ -275,6 +275,15 @@ struct RendererLineSegments1 : RendererBase {
     mutable ImVec2 UV1;
 };
 
+struct PointGetter {
+    PointGetter(const ImVec2& end) : End(end) { }
+    template <typename I> inline ImPlotPoint operator()(I) const {
+        return ImPlotPoint(End.x, End.y);
+    }
+    const ImVec2& End;
+    const int Count{ 1 };
+};
+
 struct VectorGetter {
     VectorGetter(const ImVec2& start, const ImVec2& end) : Start(start), End(end) { }
     template <typename I> inline ImPlotPoint operator()(I idx) const {
@@ -285,27 +294,143 @@ struct VectorGetter {
     const int Count{ 2 };
 };
 
+template <class _Getter>
+struct RendererMarkersFill : RendererBase {
+    RendererMarkersFill(const _Getter& getter, const ImVec2* marker, int count, float size, ImU32 col) :
+        RendererBase(getter.Count, (count-2)*3, count),
+        Getter(getter),
+        Marker(marker),
+        Count(count),
+        Size(size),
+        Col(col)
+    { }
+    void Init(ImDrawList& draw_list) const {
+        UV = draw_list._Data->TexUvWhitePixel;
+    }
+    inline bool Render(ImDrawList& draw_list, const ImRect& cull_rect, int prim) const {
+        ImVec2 p = this->Transformer(Getter(prim));
+        if (p.x >= cull_rect.Min.x && p.y >= cull_rect.Min.y && p.x <= cull_rect.Max.x && p.y <= cull_rect.Max.y) {
+            for (int i = 0; i < Count; i++) {
+                draw_list._VtxWritePtr[0].pos.x = p.x + Marker[i].x * Size;
+                draw_list._VtxWritePtr[0].pos.y = p.y + Marker[i].y * Size;
+                draw_list._VtxWritePtr[0].uv = UV;
+                draw_list._VtxWritePtr[0].col = Col;
+                draw_list._VtxWritePtr++;
+            }
+            for (int i = 2; i < Count; i++) {
+                draw_list._IdxWritePtr[0] = (ImDrawIdx)(draw_list._VtxCurrentIdx);
+                draw_list._IdxWritePtr[1] = (ImDrawIdx)(draw_list._VtxCurrentIdx + i - 1);
+                draw_list._IdxWritePtr[2] = (ImDrawIdx)(draw_list._VtxCurrentIdx + i);
+                draw_list._IdxWritePtr += 3;
+            }
+            draw_list._VtxCurrentIdx += (ImDrawIdx)Count;
+            return true;
+        }
+        return false;
+    }
+    const _Getter& Getter;
+    const ImVec2* Marker;
+    const int Count;
+    const float Size;
+    const ImU32 Col;
+    mutable ImVec2 UV;
+};
+
+template <class _Getter>
+struct RendererMarkersLine : RendererBase {
+    RendererMarkersLine(const _Getter& getter, const ImVec2* marker, int count, float size, float weight, ImU32 col) :
+        RendererBase(getter.Count, count/2*6, count/2*4),
+        Getter(getter),
+        Marker(marker),
+        Count(count),
+        HalfWeight(ImMax(1.0f,weight)*0.5f),
+        Size(size),
+        Col(col)
+    { }
+    void Init(ImDrawList& draw_list) const {
+        GetLineRenderProps(draw_list, HalfWeight, UV0, UV1);
+    }
+    inline bool Render(ImDrawList& draw_list, const ImRect& cull_rect, int prim) const {
+        ImVec2 p = this->Transformer(Getter(prim));
+        if (p.x >= cull_rect.Min.x && p.y >= cull_rect.Min.y && p.x <= cull_rect.Max.x && p.y <= cull_rect.Max.y) {
+            for (int i = 0; i < Count; i = i + 2) {
+                ImVec2 p1(p.x + Marker[i].x * Size, p.y + Marker[i].y * Size);
+                ImVec2 p2(p.x + Marker[i+1].x * Size, p.y + Marker[i+1].y * Size);
+                PrimLine(draw_list, p1, p2, HalfWeight, Col, UV0, UV1);
+            }
+            return true;
+        }
+        return false;
+    }
+    const _Getter& Getter;
+    const ImVec2* Marker;
+    const int Count;
+    mutable float HalfWeight;
+    const float Size;
+    const ImU32 Col;
+    mutable ImVec2 UV0;
+    mutable ImVec2 UV1;
+};
+
+#define SQRT_3_2 0.86602540378f
+
+static ImVec2 MARKER_FILL_RIGHT[3]    = {ImVec2(1,0), ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, -SQRT_3_2)};
+static ImVec2 MARKER_LINE_RIGHT[6]    = {ImVec2(1,0),  ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(1,0) };
+
 void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
+    static bool initialized = false;
+    if (!initialized) {
+        initialized = true;
+        for (int i = 0; i < 6; ++i) {
+            if (i < 3)
+                MARKER_FILL_RIGHT[i].x *= 2;
+            MARKER_LINE_RIGHT[i].x *= 2;
+        }
+    }
     if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
-        VectorGetter getter(start, end);
         const ImPlotNextItemData& s = GetItemData();
         if (s.RenderLine) {
             const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_Line]);
-            RenderPrimitives1<RendererLineSegments1>(getter,col_line,s.LineWeight);
+            VectorGetter getter1(start, end);
+            RenderPrimitives1<RendererLineSegments1>(getter1,col_line,s.LineWeight);
+
+            // Rotate the marker points so they point in the direction of the vector
+            ImVec2 fill[3];
+            ImVec2 line[6];
+            {
+                Transformer2 transformer;
+                ImVec2 start_screen = transformer(start.x, start.y);
+                ImVec2 end_screen = transformer(end.x, end.y);
+                ImVec2 dir_screen = end_screen - start_screen;
+                // Now, dir is expressed in the plot space
+                // We need to use the ImPlot Transform to move to screen coordinates
+                // Watch out, the ImGui coordinate system is flipped on the y axis
+                float angle = atan2(dir_screen.y, dir_screen.x);
+                float c = cos(angle);
+                float s = sin(angle);
+                for (int i = 0; i < 6; ++i) {
+                    if (i < 3) {
+                        float x = MARKER_FILL_RIGHT[i].x;
+                        float y = MARKER_FILL_RIGHT[i].y;
+                        fill[i].x = x * c - y * s;
+                        fill[i].y = x * s + y * c;
+                    }
+
+                    float x = MARKER_LINE_RIGHT[i].x;
+                    float y = MARKER_LINE_RIGHT[i].y;
+                    line[i].x = x * c - y * s;
+                    line[i].y = x * s + y * c;
+                }
+            }
+
+            // Render vector arrow
+            PointGetter getter2(end);
+            RenderPrimitives1<RendererMarkersFill>(getter2, fill, 3, s.MarkerSize, col_line);
+            // We add this just to get an antialiased outline for the vector arrow
+            RenderPrimitives1<RendererMarkersLine>(getter2, line, 6, s.MarkerSize, 1, col_line);
         }
-        // render markers
-        // if (s.Marker != ImPlotMarker_None) {
-        //     if (ImHasFlag(flags, ImPlotLineFlags_NoClip)) {
-        //         PopPlotClipRect();
-        //         PushPlotClipRect(s.MarkerSize);
-        //     }
-        //     const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerOutline]);
-        //     const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerFill]);
-        //     RenderMarkers<_Getter>(getter, s.Marker, s.MarkerSize, s.RenderMarkerFill, col_fill, s.RenderMarkerLine, col_line, s.MarkerWeight);
-        // }
         EndItem();
     }
 }
 
 }
-

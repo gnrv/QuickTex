@@ -2,10 +2,12 @@
 
 ImGui::Text("Insehkjhkrt ImPlot Here");
 
-static float mk_size = ImPlot::GetStyle().MarkerSize;
-static float mk_weight = ImPlot::GetStyle().MarkerWeight;
+static float vec_y = 5;
+static float mk_size = 6; // ImPlot::GetStyle().MarkerSize
+static float line_weight = 3;
+ImGui::SliderFloat("Vector Y", &vec_y, 0, 10);
 ImGui::SliderFloat("Size", &mk_size, 0, 10);
-ImGui::SliderFloat("Weight", &mk_weight, 0, 10);
+ImGui::SliderFloat("Vector Weight", &line_weight, 0, 10);
 if (ImPlot::BeginPlot("hejz")) {
         ImPlot::SetupAxesLimits(0, 10, 0, 12);
 
@@ -15,9 +17,20 @@ if (ImPlot::BeginPlot("hejz")) {
         // filled markers
         for (int m = 0; m < ImPlotMarker_COUNT; ++m) {
             ImGui::PushID(m);
-            ImPlot::PushStyleVar(ImPlotStyleVar_LineWeight, 3);
-            ImPlot::Vector("Hej", ImVec2(xs[0], ys[0]), ImVec2(xs[0]+2, ys[0]+mk_size), ImPlotItemFlags_NoLegend);
-            ImPlot::PopStyleVar(1);
+            ImPlot::PushStyleVar(ImPlotStyleVar_LineWeight, line_weight);
+            ImPlot::PushStyleVar(ImPlotStyleVar_MarkerSize, mk_size);
+            if (m % 2) {
+                ImPlot::Vector("Hej", 
+                    ImVec2(xs[0]+2, ys[0]+vec_y),
+                    ImVec2(xs[0], ys[0]),
+                    ImPlotItemFlags_NoLegend);
+            } else {
+                ImPlot::Vector("Hej", 
+                    ImVec2(xs[0], ys[0]),
+                    ImVec2(xs[0]+2, ys[0]+vec_y),
+                    ImPlotItemFlags_NoLegend);
+            }
+            ImPlot::PopStyleVar(2);
             ImGui::PopID();
             ys[0]--; ys[1]--;
             ys[2]--; ys[3]--;
@@ -26,7 +39,7 @@ if (ImPlot::BeginPlot("hejz")) {
         // open markers
         for (int m = 0; m < ImPlotMarker_COUNT; ++m) {
             ImGui::PushID(m);
-            ImPlot::SetNextMarkerStyle(m, mk_size, IMPLOT_AUTO_COL, mk_weight);
+            ImPlot::SetNextMarkerStyle(m, mk_size, IMPLOT_AUTO_COL, 1);
             ImPlot::PlotLine("##Filled", xs, ys, 2);
             ImGui::PopID();
             ys[0]--; ys[1]--;

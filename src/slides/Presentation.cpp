@@ -9,9 +9,10 @@ SourceFile::SourceFile(fs::path path)
 : path(path)
 {
     std::ifstream t(path);
-    if (t.good())
+    if (t.good()) {
         src = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-    else {
+        lines = std::count(src.begin(), src.end(), '\n');
+    } else {
         // Try to create a new file
         std::ofstream out(path);
         if (!out) {
