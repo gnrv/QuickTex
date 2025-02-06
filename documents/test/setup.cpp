@@ -492,6 +492,13 @@ void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flag
         ImVector *vector = g_Vectors.GetOrAddByKey(id);
         double s = BeginFade(vector);
         RenderVector(start, end, flags);
+        if (!ImHasFlag(flags, ImPlotItemFlags_NoLabel)) {
+            ImVec2 pos = (end + start) / 2;
+            ImVec4 col = ImPlot::GetStyleColorVec4(ImPlotCol_InlayText);
+            ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(col.x, col.y, col.z, s));
+            ImPlot::PlotText(label_id, pos.x, pos.y);
+            ImPlot::PopStyleColor();
+        }
         EndFade(vector, s);
         EndItem();
     }
@@ -513,7 +520,7 @@ void Bivector(const char* label_id, ImVec2 start, ImVec2 mid, ImVec2 end, ImPlot
         RenderVector(end - a, start, flags);
 
         if (!ImHasFlag(flags, ImPlotItemFlags_NoLabel)) {
-            ImVec2 pos = start + (end - start) / 2;
+            ImVec2 pos = (end + start) / 2;
             ImVec4 col = ImPlot::GetStyleColorVec4(ImPlotCol_InlayText);
             ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(col.x, col.y, col.z, s));
             ImPlot::PlotText(label_id, pos.x, pos.y);

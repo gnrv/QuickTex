@@ -23,12 +23,12 @@ if (ImPlot::BeginPlot("hejz")) {
                 ImPlot::Vector("Hej", 
                     ImVec2(xs[0]+2, ys[0]+vec_y),
                     ImVec2(xs[0], ys[0]),
-                    ImPlotItemFlags_NoLegend);
+                    ImPlotItemFlags_NoLegend | ImPlotItemFlags_NoLabel);
             } else {
                 ImPlot::Vector("Hej", 
                     ImVec2(xs[0], ys[0]),
                     ImVec2(xs[0]+2, ys[0]+vec_y),
-                    ImPlotItemFlags_NoLegend);
+                    ImPlotItemFlags_NoLegend | ImPlotItemFlags_NoLabel);
             }
             ImGui::PopID();
             ys[0]--; ys[1]--;
