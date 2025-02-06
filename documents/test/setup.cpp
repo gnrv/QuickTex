@@ -514,6 +514,24 @@ void Bivector(const char* label_id, ImVec2 start, ImVec2 mid, ImVec2 end, ImPlot
         ImVec2 a = mid - start;
         auto bivector = g_Bivectors.GetOrAddByKey(ImGui::GetID(label_id));
         double s = BeginFade(bivector);
+        ImDrawList &draw_list = *GetPlotDrawList();
+        ImVec2 start_screen = Transformer2()(start.x, start.y);
+        ImVec2 mid_screen = Transformer2()(mid.x, mid.y);
+        ImVec2 end_screen = Transformer2()(end.x, end.y);
+
+        // Add a polygon (parallelogram) to represent the bivector
+        // We need to add the points in a clockwise order, according to ImGui docs.
+        // Note that the notion of clockwise is reversed in the plot because the y-axis is flipped.
+        float orientation = a.x * (end.y - mid.y) + a.y * (mid.x - end.x);
+        ImVec2 points[4] = {start_screen, mid_screen, end_screen, start_screen + end_screen - mid_screen};
+        if (orientation > 0)
+            std::swap(points[1], points[3]);
+        const ImPlotNextItemData& data = GetItemData();
+        ImVec4 col4 = data.Colors[ImPlotCol_Line];
+        col4.w *= 0.25;
+        const ImU32 col_line = ImGui::GetColorU32(col4);
+        draw_list.AddConvexPolyFilled(points, 4, col_line);
+
         RenderVector(start, mid, flags);
         RenderVector(mid, end, flags);
         RenderVector(end, end - a, flags);
