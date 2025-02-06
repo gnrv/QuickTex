@@ -241,7 +241,7 @@ namespace Latex {
         bool all_saturated = true;
         for (auto& call : calls) {
             // Compute local interpolation parameter t, 0 <= t <= 1
-            float t = ImSaturate(t_scale*(ImGui::GetTime() - t_start - i*t_offset));
+            float t = animate ? ImSaturate(t_scale*(ImGui::GetTime() - t_start - i*t_offset)) : 1;
             if (t < 1)
                 all_saturated = false;
             if (call.fct_name == "beginPath") {
