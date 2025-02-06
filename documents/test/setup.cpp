@@ -10,6 +10,8 @@
 
 #include <imga.h>
 
+#include <cstddef>
+
 namespace ImPlot {
 
 struct VectorFitter {
@@ -442,21 +444,83 @@ static void RenderVector(ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
     RenderPrimitives1<RendererMarkersLine>(getter2, line, 6, s.MarkerSize, 1, col_line);
 }
 
+static size_t g_Ordinal = 0;
+
+struct ImGaBase {
+    size_t Ordinal{ g_Ordinal++ };
+    bool Animate{ false };
+    double StartTime{ 0 };
+};
+
+struct ImVector : ImGaBase {
+};
+
+ImPool<ImVector> g_Vectors;
+
+double BeginFade(ImGaBase *item) {
+    ImGuiContext& g = *GImGui;
+    double now = ImGui::GetTime();
+    if (g.CurrentItemFlags & ImGuiItemFlags_Animated) {
+        item->Animate = true;
+        item->StartTime = now + item->Ordinal * 0.05; // 0.05 is used in latex.cpp
+    }
+
+    double t = now - item->StartTime;
+    double s = ImSaturate(t / 0.5);
+    //s = s * s * s * (s * (s * 6 - 15) + 10);
+    //s = 1 - pow(1 - s, 3);
+    if (item->Animate) {
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, s);
+    } else {
+        s = 1;
+    }
+    return s;
+}
+
+void EndFade(ImGaBase *item, double s) {
+    if (item->Animate) {
+        if (s >= 1) {
+            item->Animate = false;
+        }
+        ImGui::PopStyleVar();
+    }
+}
+
 void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
     if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
+        const ImGuiID id = ImGui::GetID(label_id);
+        ImVector *vector = g_Vectors.GetOrAddByKey(id);
+        double s = BeginFade(vector);
         RenderVector(start, end, flags);
+        EndFade(vector, s);
         EndItem();
     }
 }
 
+struct ImBivector : ImGaBase {
+};
+
+ImPool<ImBivector> g_Bivectors;
+
 void Bivector(const char* label_id, ImVec2 start, ImVec2 mid, ImVec2 end, ImPlotItemFlags flags) {
     if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
         ImVec2 a = mid - start;
-        // ImVec2 b = end - mid;
+        auto bivector = g_Bivectors.GetOrAddByKey(ImGui::GetID(label_id));
+        double s = BeginFade(bivector);
         RenderVector(start, mid, flags);
         RenderVector(mid, end, flags);
         RenderVector(end, end - a, flags);
         RenderVector(end - a, start, flags);
+
+        if (!ImHasFlag(flags, ImPlotItemFlags_NoLabel)) {
+            ImVec2 pos = start + (end - start) / 2;
+            ImVec4 col = ImPlot::GetStyleColorVec4(ImPlotCol_InlayText);
+            ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(col.x, col.y, col.z, s));
+            ImPlot::PlotText(label_id, pos.x, pos.y);
+            ImPlot::PopStyleColor();
+        }
+
+        EndFade(bivector, s);
         EndItem();
     }
 }

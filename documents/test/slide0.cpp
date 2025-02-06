@@ -40,7 +40,6 @@ if (ImPlot::BeginPlot("hejz")) {
         ImPlot::PopStyleVar(2);
 
         ImPlot::PlotText("Vectors", 2.5f, 6.0f);
-        ImPlot::PlotText("Bivector",   7.5f, 6.0f);
 
         ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(1,0,1,1));
         ImPlot::PlotText("Vertical Text", 5.0f, 6.0f, ImVec2(0,0), ImPlotTextFlags_Vertical);
