@@ -377,7 +377,11 @@ struct RendererMarkersLine : RendererBase {
 static ImVec2 MARKER_FILL_RIGHT[3]    = {ImVec2(0,0), ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, -SQRT_3_2)};
 static ImVec2 MARKER_LINE_RIGHT[6]    = {ImVec2(0,0),  ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, SQRT_3_2), ImVec2(-1.5, -SQRT_3_2), ImVec2(-1.5, -SQRT_3_2), ImVec2(0,0) };
 
-void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
+static void RenderVector(ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
+    const ImPlotNextItemData& s = GetItemData();
+    if (!s.RenderLine)
+        return;
+
     static bool initialized = false;
     if (!initialized) {
         initialized = true;
@@ -387,58 +391,72 @@ void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flag
             MARKER_LINE_RIGHT[i].x *= 2;
         }
     }
-    if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
-        const ImPlotNextItemData& s = GetItemData();
-        if (s.RenderLine) {
-            Transformer2 transformer;
-            ImVec2 start_screen = transformer(start.x, start.y);
-            ImVec2 end_screen = transformer(end.x, end.y);
-            ImVec2 dir_screen = end_screen - start_screen;
-            ImVec2 normalized_dir_screen = dir_screen / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
-            ImVec2 adjusted_end_screen = end_screen - normalized_dir_screen * s.MarkerSize;
 
-            // TODO: We need to inverse transform adjusted_end_screen back to the plot space
-            // to get the actual end point of the vector
-            // For now, just compute normalized_dir
-            ImVec2 dir = end - start;
-            ImVec2 normalized_dir = dir / sqrt(dir.x * dir.x + dir.y * dir.y);
-            float scale = sqrt(dir.x * dir.x + dir.y * dir.y) / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
+    Transformer2 transformer;
+    ImVec2 start_screen = transformer(start.x, start.y);
+    ImVec2 end_screen = transformer(end.x, end.y);
+    ImVec2 dir_screen = end_screen - start_screen;
+    ImVec2 normalized_dir_screen = dir_screen / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
+    ImVec2 adjusted_end_screen = end_screen - normalized_dir_screen * s.MarkerSize;
 
-            const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_Line]);
-            VectorGetter getter1(start, end - normalized_dir*scale*10);
-            RenderPrimitives1<RendererLineSegments1>(getter1,col_line,s.LineWeight);
+    // TODO: We need to inverse transform adjusted_end_screen back to the plot space
+    // to get the actual end point of the vector
+    // For now, just compute normalized_dir
+    ImVec2 dir = end - start;
+    ImVec2 normalized_dir = dir / sqrt(dir.x * dir.x + dir.y * dir.y);
+    float scale = sqrt(dir.x * dir.x + dir.y * dir.y) / sqrt(dir_screen.x * dir_screen.x + dir_screen.y * dir_screen.y);
 
-            // Rotate the marker points so they point in the direction of the vector
-            ImVec2 fill[3];
-            ImVec2 line[6];
-            {
-                // Now, dir is expressed in the plot space
-                // We need to use the ImPlot Transform to move to screen coordinates
-                // Watch out, the ImGui coordinate system is flipped on the y axis
-                float angle = atan2(dir_screen.y, dir_screen.x);
-                float c = cos(angle);
-                float s = sin(angle);
-                for (int i = 0; i < 6; ++i) {
-                    if (i < 3) {
-                        float x = MARKER_FILL_RIGHT[i].x;
-                        float y = MARKER_FILL_RIGHT[i].y;
-                        fill[i].x = x * c - y * s;
-                        fill[i].y = x * s + y * c;
-                    }
+    const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_Line]);
+    VectorGetter getter1(start, end - normalized_dir*scale*10);
+    RenderPrimitives1<RendererLineSegments1>(getter1,col_line,s.LineWeight);
 
-                    float x = MARKER_LINE_RIGHT[i].x;
-                    float y = MARKER_LINE_RIGHT[i].y;
-                    line[i].x = x * c - y * s;
-                    line[i].y = x * s + y * c;
-                }
+    // Rotate the marker points so they point in the direction of the vector
+    ImVec2 fill[3];
+    ImVec2 line[6];
+    {
+        // Now, dir is expressed in the plot space
+        // We need to use the ImPlot Transform to move to screen coordinates
+        // Watch out, the ImGui coordinate system is flipped on the y axis
+        float angle = atan2(dir_screen.y, dir_screen.x);
+        float c = cos(angle);
+        float s = sin(angle);
+        for (int i = 0; i < 6; ++i) {
+            if (i < 3) {
+                float x = MARKER_FILL_RIGHT[i].x;
+                float y = MARKER_FILL_RIGHT[i].y;
+                fill[i].x = x * c - y * s;
+                fill[i].y = x * s + y * c;
             }
 
-            // Render vector arrow
-            PointGetter getter2(end);
-            RenderPrimitives1<RendererMarkersFill>(getter2, fill, 3, s.MarkerSize, col_line);
-            // We add this just to get an antialiased outline for the vector arrow
-            RenderPrimitives1<RendererMarkersLine>(getter2, line, 6, s.MarkerSize, 1, col_line);
+            float x = MARKER_LINE_RIGHT[i].x;
+            float y = MARKER_LINE_RIGHT[i].y;
+            line[i].x = x * c - y * s;
+            line[i].y = x * s + y * c;
         }
+    }
+
+    // Render vector arrow
+    PointGetter getter2(end);
+    RenderPrimitives1<RendererMarkersFill>(getter2, fill, 3, s.MarkerSize, col_line);
+    // We add this just to get an antialiased outline for the vector arrow
+    RenderPrimitives1<RendererMarkersLine>(getter2, line, 6, s.MarkerSize, 1, col_line);
+}
+
+void Vector(const char* label_id, ImVec2 start, ImVec2 end, ImPlotItemFlags flags) {
+    if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
+        RenderVector(start, end, flags);
+        EndItem();
+    }
+}
+
+void Bivector(const char* label_id, ImVec2 start, ImVec2 mid, ImVec2 end, ImPlotItemFlags flags) {
+    if (BeginItemEx(label_id, VectorFitter(start, end), flags, ImPlotCol_Line)) {
+        ImVec2 a = mid - start;
+        // ImVec2 b = end - mid;
+        RenderVector(start, mid, flags);
+        RenderVector(mid, end, flags);
+        RenderVector(end, end - a, flags);
+        RenderVector(end - a, start, flags);
         EndItem();
     }
 }
